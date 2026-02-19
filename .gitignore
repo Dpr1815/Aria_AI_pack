@@ -40,7 +40,8 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
-
+log/
+logs/
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
@@ -49,7 +50,10 @@ web_modules/
 
 # Optional npm cache directory
 .npm
+# Optional npm cache directory
+.claude
 
+credentials
 # Optional eslint cache
 .eslintcache
 
@@ -134,6 +138,11 @@ dist
 !.yarn/sdks
 !.yarn/versions
 
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

@@ -1,0 +1,14 @@
+node_modules
+dist
+logs
+credentials
+.env
+.env.*
+*.log
+.git
+.gitignore
+tests
+docs
+jest.config.js
+tsconfig.test.json
+README.md

@@ -1,0 +1,33 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "types": ["jest", "node"],
+    "rootDir": ".",
+    "paths": {
+      "@config": ["src/config/index.ts"],
+      "@config/*": ["src/config/*"],
+      "@connectors": ["src/connectors/index.ts"],
+      "@connectors/*": ["src/connectors/*"],
+      "@models": ["src/models/index.ts"],
+      "@models/*": ["src/models/*"],
+      "@repositories": ["src/repositories/index.ts"],
+      "@repositories/*": ["src/repositories/*"],
+      "@services": ["src/services/index.ts"],
+      "@services/*": ["src/services/*"],
+      "@controllers": ["src/controllers/index.ts"],
+      "@controllers/*": ["src/controllers/*"],
+      "@routes": ["src/routes/index.ts"],
+      "@routes/*": ["src/routes/*"],
+      "@validations": ["src/validations/index.ts"],
+      "@validations/*": ["src/validations/*"],
+      "@utils": ["src/utils/index.ts"],
+      "@utils/*": ["src/utils/*"],
+      "@types": ["src/types/index.ts"],
+      "@types/*": ["src/types/*"],
+      "@test/*": ["tests/*"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

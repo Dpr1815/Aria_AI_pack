@@ -1,0 +1,38 @@
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json',
+    }],
+  },
+  roots: ['<rootDir>/tests'],
+  testMatch: ['**/*.test.ts'],
+  moduleNameMapper: {
+    '^@config/(.*)$': '<rootDir>/src/config/$1',
+    '^@config$': '<rootDir>/src/config/index',
+    '^@connectors/(.*)$': '<rootDir>/src/connectors/$1',
+    '^@connectors$': '<rootDir>/src/connectors/index',
+    '^@models/(.*)$': '<rootDir>/src/models/$1',
+    '^@models$': '<rootDir>/src/models/documents/index',
+    '^@repositories/(.*)$': '<rootDir>/src/repositories/$1',
+    '^@repositories$': '<rootDir>/src/repositories/index',
+    '^@services/(.*)$': '<rootDir>/src/services/$1',
+    '^@services$': '<rootDir>/src/services/index',
+    '^@controllers/(.*)$': '<rootDir>/src/controllers/$1',
+    '^@routes/(.*)$': '<rootDir>/src/routes/$1',
+    '^@validations/(.*)$': '<rootDir>/src/validations/$1',
+    '^@validations$': '<rootDir>/src/validations/index',
+    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
+    '^@utils$': '<rootDir>/src/utils/index',
+    '^@types/(.*)$': '<rootDir>/src/types/$1',
+    '^@types$': '<rootDir>/src/types/index',
+  },
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/types/**',
+  ],
+  forceExit: true,
+};

@@ -1,0 +1,33 @@
+export type {
+  Locale,
+  AgentStatus,
+  SessionStatus,
+  VoiceConfig,
+  AgentFeatures,
+  PresentationConfig,
+  RenderConfig,
+  AssessmentConfig,
+  Agent,
+  Participant,
+  Session,
+  SessionAuth,
+  ChatMessage,
+  WsClientMessageType,
+  WsAction,
+  WsOutboundMessage,
+  VisemeCue,
+  WsInboundMessage,
+  VideoUploadResult,
+  JoinModalProps,
+  PresentationViewerProps,
+  SpeechControlsProps,
+} from "./room.types";
+
+export type {
+  MorphTargetMap,
+  LipSyncCue,
+  LipSyncEventDetail,
+  AudioStartEventDetail,
+  NeutralExpression,
+  VisemeId,
+} from "./avatar.types";

@@ -1,0 +1,106 @@
+version: "3.3"
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    networks:
+      - aria-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - aria-network
+
+  aria-flow-engine:
+    build:
+      context: ../aria-flow-engine
+      dockerfile: Dockerfile
+    container_name: aria-flow-engine
+    ports:
+      - "${FLOW_PORT}:${FLOW_PORT}"
+    env_file:
+      - ../aria-flow-engine/.env
+    environment:
+      # Overrides: transformed by start.sh (localhost → container hostnames, ./ → /app/)
+      DATABASE_URI: ${FLOW_DATABASE_URI}
+      GCS_KEY_FILE_PATH: ${FLOW_GCS_KEY_FILE_PATH}
+      REDIS_URL: ${FLOW_REDIS_URL}
+    volumes:
+      - ../aria-flow-engine/credentials/service-account.json:/app/credentials/service-account.json:ro
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    networks:
+      - aria-network
+
+  aria-ws-engine:
+    build:
+      context: ../aria-ws-engine
+      dockerfile: Dockerfile
+      args:
+        RHUBARB_VERSION: 1.14.0
+    container_name: aria-ws-engine
+    ports:
+      - "${WS_PORT}:${WS_PORT}"
+    env_file:
+      - ../aria-ws-engine/.env
+    environment:
+      # Overrides: transformed by start.sh (localhost → container hostnames, ./ → /app/)
+      DATABASE_URI: ${WS_DATABASE_URI}
+      API_SERVER_URL: ${WS_API_SERVER_URL}
+      GCS_KEY_FILE_PATH: ${WS_GCS_KEY_FILE_PATH}
+      REDIS_URL: ${WS_REDIS_URL}
+    volumes:
+      - ../aria-ws-engine/credentials/service-account.json:/app/credentials/service-account.json:ro
+    depends_on:
+      - mongo
+      - redis
+      - aria-flow-engine
+    restart: unless-stopped
+    networks:
+      - aria-network
+
+  aria-frontend:
+    build:
+      context: ../aria-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:${FLOW_PORT}
+        VITE_WS_URL: ws://localhost:${WS_PORT}/ws
+    container_name: aria-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - aria-flow-engine
+      - aria-ws-engine
+    restart: unless-stopped
+    networks:
+      - aria-network
+
+volumes:
+  mongo_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  aria-network:
+    driver: bridge
