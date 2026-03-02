@@ -147,7 +147,7 @@ function buildMockDeps() {
       endSession: jest.fn().mockResolvedValue('Hello, I am the user.'),
     },
     synthesis: {
-      synthesize: jest.fn().mockImplementation(function* () {
+      synthesize: jest.fn().mockImplementation(async function* () {
         yield {
           audio: Buffer.alloc(1000),
           visemes: [],

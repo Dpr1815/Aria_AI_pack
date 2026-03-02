@@ -7,11 +7,12 @@ import { ObjectId } from 'mongodb';
 // Mock the ws.utils module before importing the handler
 jest.mock('@controllers/handlers/ws.utils', () => ({
   sendError: jest.fn(),
+  sendSafeError: jest.fn(),
   deliverResponse: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { execute } from '@controllers/handlers/submitData.handler';
-import { sendError, deliverResponse } from '@controllers/handlers/ws.utils';
+import { sendError, sendSafeError, deliverResponse } from '@controllers/handlers/ws.utils';
 
 describe('submitData handler', () => {
   beforeEach(() => {
@@ -113,6 +114,6 @@ describe('submitData handler', () => {
 
     await execute(ws, message as any, context as any);
 
-    expect(sendError).toHaveBeenCalled();
+    expect(sendSafeError).toHaveBeenCalled();
   });
 });
