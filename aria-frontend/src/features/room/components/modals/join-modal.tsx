@@ -39,6 +39,15 @@ export function JoinModal({ agent, roomId, isTestMode = false, onJoinSuccess }: 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError(t.invalidEmail);
+      return;
+    }
+
     setIsSubmitting(true);
 
     const join = isTestMode ? testJoinSession : joinSession;
@@ -46,8 +55,8 @@ export function JoinModal({ agent, roomId, isTestMode = false, onJoinSuccess }: 
     try {
       const auth = await join({
         agentId: roomId,
-        email,
-        name: name || undefined,
+        email: trimmedEmail,
+        name: trimmedName || undefined,
       });
       onJoinSuccess(auth);
     } catch (err) {

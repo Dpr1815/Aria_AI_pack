@@ -3,6 +3,15 @@
  * Feature-specific types should live in their respective feature folder.
  */
 
+export type {
+  AgentStatus,
+  VoiceConfig,
+  AgentFeatures,
+  PresentationConfig,
+  RenderConfig,
+  AssessmentConfig,
+} from "./agent-config.types";
+
 /** Generic API response wrapper */
 export interface ApiResponse<T> {
   data: T;

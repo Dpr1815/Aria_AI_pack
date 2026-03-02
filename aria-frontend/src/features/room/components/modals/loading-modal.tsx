@@ -18,13 +18,13 @@ export function LoadingModal({ locale = "en-US" }: LoadingModalProps) {
   }, [messages.length]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/75">
-      <div className="mx-4 w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/75">
+      <div className="mx-4 w-full max-w-md rounded-card bg-surface-modal p-8 shadow-card">
         {/* Spinner */}
         <div className="mb-6 flex justify-center">
           <div className="h-16 w-16 animate-spin">
             <svg
-              className="h-full w-full text-blue-600"
+              className="h-full w-full text-primary"
               fill="none"
               viewBox="0 0 24 24"
             >
@@ -45,7 +45,7 @@ export function LoadingModal({ locale = "en-US" }: LoadingModalProps) {
           </div>
         </div>
 
-        <p className="mb-4 text-center font-medium text-gray-700">
+        <p className="mb-4 text-center font-medium text-text-secondary">
           {messages[index] ?? l.room.creatingReport}
         </p>
 
@@ -54,7 +54,7 @@ export function LoadingModal({ locale = "en-US" }: LoadingModalProps) {
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className="h-3 w-3 animate-bounce rounded-full bg-blue-600"
+              className="h-3 w-3 animate-bounce rounded-full bg-primary"
               style={{ animationDelay: `${i * 200}ms` }}
             />
           ))}

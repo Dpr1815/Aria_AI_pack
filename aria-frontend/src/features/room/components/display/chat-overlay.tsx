@@ -20,7 +20,7 @@ export function ChatWindow({ messages }: ChatWindowProps) {
 
         return (
           <div
-            key={i}
+            key={`${msg.sender}-${msg.stepKey ?? ""}-${i}`}
             className={`flex ${isUser ? "justify-end" : "justify-start"}`}
           >
             <div

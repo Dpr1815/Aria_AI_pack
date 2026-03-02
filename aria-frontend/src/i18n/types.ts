@@ -311,6 +311,7 @@ export interface RoomLabels {
     errorAuth: string;
     creatingInterview: string;
     agentNotActive: string;
+    invalidEmail: string;
   };
   tutorial: {
     header: { welcome: string; subtitle: string };

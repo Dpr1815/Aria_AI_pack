@@ -19,12 +19,22 @@ const WS_URL: string =
   (import.meta.env.VITE_WS_URL as string | undefined) ?? "ws://localhost:5000";
 
 export type WsMessageHandler = (message: WsInboundMessage) => void;
-export type WsStatusHandler = (status: "connected" | "disconnected") => void;
+export type WsStatusHandler = (
+  status: "connected" | "disconnected" | "reconnecting",
+) => void;
+
+const RECONNECT_BASE_DELAY_MS = 1_000;
+const RECONNECT_MAX_DELAY_MS = 30_000;
+const RECONNECT_MAX_ATTEMPTS = 10;
 
 export class RoomWebSocket {
   private ws: WebSocket | null = null;
   private onMessage: WsMessageHandler;
   private onStatus: WsStatusHandler;
+
+  private intentionalClose = false;
+  private reconnectAttempt = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(onMessage: WsMessageHandler, onStatus: WsStatusHandler) {
     this.onMessage = onMessage;
@@ -33,9 +43,15 @@ export class RoomWebSocket {
 
   /** Open the WebSocket connection */
   connect(): void {
+    this.intentionalClose = false;
+    this.openSocket();
+  }
+
+  private openSocket(): void {
     this.ws = new WebSocket(WS_URL);
 
     this.ws.onopen = () => {
+      this.reconnectAttempt = 0;
       this.onStatus("connected");
     };
 
@@ -53,8 +69,36 @@ export class RoomWebSocket {
     };
 
     this.ws.onclose = () => {
-      this.onStatus("disconnected");
+      if (this.intentionalClose) {
+        this.onStatus("disconnected");
+        return;
+      }
+      this.scheduleReconnect();
     };
+  }
+
+  private scheduleReconnect(): void {
+    if (this.reconnectAttempt >= RECONNECT_MAX_ATTEMPTS) {
+      console.error("[RoomWS] Max reconnect attempts reached");
+      this.onStatus("disconnected");
+      return;
+    }
+
+    const delay = Math.min(
+      RECONNECT_BASE_DELAY_MS * 2 ** this.reconnectAttempt,
+      RECONNECT_MAX_DELAY_MS,
+    );
+    this.reconnectAttempt++;
+
+    console.info(
+      `[RoomWS] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempt}/${RECONNECT_MAX_ATTEMPTS})`,
+    );
+    this.onStatus("reconnecting");
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.openSocket();
+    }, delay);
   }
 
   /** Send a typed message over the socket */
@@ -71,8 +115,13 @@ export class RoomWebSocket {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 
-  /** Close the connection */
+  /** Close the connection (no auto-reconnect) */
   disconnect(): void {
+    this.intentionalClose = true;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.ws?.close();
     this.ws = null;
   }

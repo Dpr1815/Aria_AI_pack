@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { cn } from "@/utils";
-import { getErrorMessage } from "@/lib/api-error";
+import { getErrorMessage } from "@/lib/api-client";
 
 interface PanelErrorProps {
   /** Pass one or more mutation error values. First truthy one wins. */

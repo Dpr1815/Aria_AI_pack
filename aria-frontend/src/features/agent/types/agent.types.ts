@@ -2,30 +2,25 @@
  * Agent Types — mirrors BE DTOs + editor state
  * ───────────────────────────────────────────────────────── */
 
-/* ── Shared configs (mirror BE validation schemas) ───────── */
+/* ── Shared configs (from @/types) ─────────────────────── */
 
-export interface VoiceConfig {
-  languageCode: string;
-  name: string;
-  gender: "MALE" | "FEMALE" | "NEUTRAL";
-}
+import type {
+  AgentStatus,
+  VoiceConfig,
+  AgentFeatures,
+  PresentationConfig,
+  RenderConfig,
+  AssessmentConfig,
+} from "@/types";
 
-export interface AgentFeatures {
-  lipSync: boolean;
-  sessionPersistence: boolean;
-  autoSummary: boolean;
-  videoRecording: boolean;
-}
-
-export interface PresentationConfig {
-  link: string;
-  slides?: Record<string, number>;
-}
-
-export interface RenderConfig {
-  mode: "avatar" | "presentation";
-  presentation?: PresentationConfig;
-}
+export type {
+  AgentStatus,
+  VoiceConfig,
+  AgentFeatures,
+  PresentationConfig,
+  RenderConfig,
+  AssessmentConfig,
+};
 
 export interface PromptMessage {
   role: "system" | "user" | "assistant";
@@ -33,8 +28,6 @@ export interface PromptMessage {
 }
 
 /* ── DTOs (mirror BE response shapes) ────────────────────── */
-
-export type AgentStatus = "active" | "inactive";
 
 export interface StepConfig {
   label: string;
@@ -51,12 +44,6 @@ export interface PromptConfig {
   maxTokens: number;
   reasoningEffort?: string;
   messages?: PromptMessage[];
-}
-
-export interface AssessmentConfig {
-  testContent: string;
-  language: string;
-  durationSeconds: number;
 }
 
 export interface Agent {

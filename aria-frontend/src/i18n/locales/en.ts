@@ -298,6 +298,7 @@ export const en: AppLabels = {
       errorAuth: "Authentication failed. Please try again.",
       creatingInterview: "Creating Interview",
       agentNotActive: "This agent is not currently active.",
+      invalidEmail: "Please enter a valid email address.",
     },
     tutorial: {
       header: {

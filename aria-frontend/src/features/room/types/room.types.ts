@@ -7,42 +7,29 @@ import type { ServerAction } from "../actions";
 /** Locale code from agent voice config (e.g. "en-US", "it-IT", "fr-FR") */
 export type Locale = string;
 
-/** Agent status from backend */
-export type AgentStatus = "active" | "inactive";
+/** Shared agent config types (from @/types) */
+import type {
+  AgentStatus,
+  VoiceConfig,
+  AgentFeatures,
+  PresentationConfig,
+  RenderConfig,
+  AssessmentConfig,
+} from "@/types";
+
+export type {
+  AgentStatus,
+  VoiceConfig,
+  AgentFeatures,
+  PresentationConfig,
+  RenderConfig,
+  AssessmentConfig,
+};
 
 /** Session status from backend */
 export type SessionStatus = "active" | "completed" | "abandoned";
 
 /* ── Agent ── */
-
-export interface VoiceConfig {
-  languageCode: string;
-  name: string;
-  gender: "MALE" | "FEMALE" | "NEUTRAL";
-}
-
-export interface AgentFeatures {
-  lipSync: boolean;
-  sessionPersistence: boolean;
-  autoSummary: boolean;
-  videoRecording: boolean;
-}
-
-export interface PresentationConfig {
-  link: string;
-  slides?: Record<string, number>;
-}
-
-export interface RenderConfig {
-  mode: "avatar" | "presentation";
-  presentation?: PresentationConfig;
-}
-
-export interface AssessmentConfig {
-  testContent: string;
-  language: string;
-  durationSeconds: number;
-}
 
 export interface Agent {
   _id: string;

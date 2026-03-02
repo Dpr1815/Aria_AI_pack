@@ -226,11 +226,3 @@ export function useAudioPlayback() {
     isPlayingRef,
   };
 }
-
-/* ── Augment Window for global audio context ── */
-declare global {
-  interface Window {
-    appAudioContext?: AudioContext;
-    audioMixer?: GainNode;
-  }
-}

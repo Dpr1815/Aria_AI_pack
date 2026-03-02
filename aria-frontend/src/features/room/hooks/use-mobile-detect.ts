@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_QUERY = "(max-width: 768px)";
 
 export function useMobileDetect(): boolean {
   const [isMobile, setIsMobile] = useState(
-    () => window.innerWidth <= MOBILE_BREAKPOINT,
+    () => window.matchMedia(MOBILE_QUERY).matches,
   );
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    const mql = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
   }, []);
 
   return isMobile;

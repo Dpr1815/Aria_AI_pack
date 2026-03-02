@@ -177,6 +177,9 @@ export function useRoomWebSocket(params: UseRoomWebSocketParams | null) {
         setIsProcessing(true);
         ws.sendInit(params.accessToken);
       }
+      if (status === "reconnecting") {
+        setIsProcessing(true);
+      }
     });
 
     ws.connect();

@@ -16,7 +16,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-border bg-surface-raised/80 backdrop-blur-sm">
       <div className="flex h-[var(--header-height)] items-center justify-between px-[var(--spacing-page-x)]">
         <Link
-          to="/"
+          to="/agents"
           className="flex items-center gap-2 font-display font-semibold tracking-tight"
           style={{ fontSize: "var(--pt-lg)" }}
         >
@@ -25,13 +25,6 @@ export function Header() {
 
         <div className="flex items-center gap-[clamp(1rem,2vw,2rem)]">
           <nav className="flex items-center gap-[clamp(0.75rem,1.5vw,1.5rem)]">
-            <Link
-              to="/"
-              className="text-text-secondary transition-colors hover:text-text [&.active]:text-primary [&.active]:font-medium"
-              style={{ fontSize: "var(--pt-base)" }}
-            >
-              {l.nav.home}
-            </Link>
             <Link
               to="/agents"
               activeOptions={{ exact: true }}

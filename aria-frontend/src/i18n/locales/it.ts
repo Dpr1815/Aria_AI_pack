@@ -33,6 +33,7 @@ export const it: AppLabels = {
       errorAuth: "Autenticazione fallita. Riprova.",
       creatingInterview: "Un momento",
       agentNotActive: "Questo agente non è attualmente attivo.",
+      invalidEmail: "Inserisci un indirizzo email valido.",
     },
     tutorial: {
       header: {

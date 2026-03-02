@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown, MessageCircle, Users } from "lucide-react";
 import { PresentationViewer } from "../display/presentation-viewer";
 import { AvatarPresentation } from "../display/avatar-presentation";
@@ -46,6 +46,15 @@ export function DesktopRoomLayout({
 
   const participantName =
     sessionAuth.participant.name ?? sessionAuth.participant.email;
+
+  const prevChatLenRef = useRef(chatHistory.length);
+  useEffect(() => {
+    const newCount = chatHistory.length - prevChatLenRef.current;
+    if (newCount > 0 && !isChatOpen) {
+      setUnread((u) => u + newCount);
+    }
+    prevChatLenRef.current = chatHistory.length;
+  }, [chatHistory.length, isChatOpen]);
 
   const handleToggleChat = () => {
     setIsChatOpen((v) => !v);

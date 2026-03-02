@@ -330,3 +330,10 @@ export const api = {
 };
 
 export { ApiError };
+
+/** Extract a human-readable message from any thrown value. */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "An unknown error occurred";
+}
