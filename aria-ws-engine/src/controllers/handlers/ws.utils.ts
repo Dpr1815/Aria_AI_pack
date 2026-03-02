@@ -19,7 +19,7 @@ import type {
 } from '@types';
 import type { VoiceConfig, SynthesisChunk } from '@types';
 import type { ProcessResult } from '@types';
-import { createLogger } from '@utils';
+import { createLogger, isOperationalError } from '@utils';
 
 const logger = createLogger('WebSocketUtils');
 
@@ -35,6 +35,21 @@ export function send(ws: WebSocket, message: ServerMessage): void {
 
 export function sendError(ws: WebSocket, error: string, code?: string, recoverable = true): void {
   send(ws, { type: 'error', error, code, recoverable });
+}
+
+/**
+ * Send an error to the client, sanitizing unexpected errors.
+ * Operational errors (AppError with isOperational=true) send their real message.
+ * Unexpected errors send a generic message to avoid leaking internals.
+ */
+export function sendSafeError(
+  ws: WebSocket,
+  error: unknown,
+  code: string,
+  genericMessage = 'An unexpected error occurred'
+): void {
+  const message = isOperationalError(error) ? (error as Error).message : genericMessage;
+  sendError(ws, message, code);
 }
 
 // ============================================

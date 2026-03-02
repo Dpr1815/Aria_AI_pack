@@ -54,7 +54,7 @@ export const StopRecordingMessageSchema = z.object({
  */
 export const SubmitDataMessageSchema = z.object({
   type: z.literal('submitData'),
-  dataType: z.string().min(1, 'dataType is required'),
+  dataType: z.string().min(1, 'dataType is required').regex(/^[a-zA-Z0-9_-]+$/, 'dataType contains invalid characters'),
   payload: z.unknown(),
   latency: z.number().nonnegative().optional(),
 });

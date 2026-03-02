@@ -25,8 +25,8 @@ import {
 } from '@types';
 import type { IApiConnector } from '@connectors';
 import { handlerRegistry, hasHandler, getRegisteredTypes } from './handlers/registry';
-import { sendError } from './handlers/ws.utils';
-import { createLogger } from '@utils';
+import { sendError, sendSafeError } from './handlers/ws.utils';
+import { createLogger, ValidationError } from '@utils';
 import { safeParseClientMessage, formatValidationError } from '@validations';
 import { WebSocketRateLimiter } from '../middleware/WebSocketRateLimiter';
 
@@ -134,7 +134,7 @@ export class WebSocketController {
         await this.routeMessage(ws, message, context);
       } catch (error) {
         logger.error('Message handling error', error as Error);
-        sendError(ws, (error as Error).message, ErrorCode.MESSAGE_ERROR);
+        sendSafeError(ws, error, ErrorCode.MESSAGE_ERROR);
       }
     });
 
@@ -182,12 +182,12 @@ export class WebSocketController {
     try {
       parsed = JSON.parse(raw);
     } catch {
-      throw new Error('Invalid JSON');
+      throw new ValidationError('Invalid JSON');
     }
 
     const result = safeParseClientMessage(parsed);
     if (!result.success) {
-      throw new Error(`Invalid message: ${formatValidationError(result.error)}`);
+      throw new ValidationError(`Invalid message: ${formatValidationError(result.error)}`);
     }
     return result.data;
   }

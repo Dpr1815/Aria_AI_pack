@@ -22,6 +22,7 @@ import {
 import {
   send,
   sendError,
+  sendSafeError,
   sendProcessingStart,
   sendProcessingEnd,
   deliverResponse,
@@ -105,6 +106,6 @@ export async function execute(
       connectionState.transcriptionSessionId = null;
     }
 
-    sendError(ws, (error as Error).message, ErrorCode.STOP_RECORDING_ERROR);
+    sendSafeError(ws, error, ErrorCode.STOP_RECORDING_ERROR);
   }
 }

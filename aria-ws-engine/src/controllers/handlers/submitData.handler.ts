@@ -12,7 +12,7 @@
 
 import type { WebSocket } from 'ws';
 import { ErrorCode, type SubmitDataMessage, type ClientMessage, type HandlerContext } from '@types';
-import { sendError, deliverResponse } from './ws.utils';
+import { sendError, sendSafeError, deliverResponse } from './ws.utils';
 import { createLogger } from '@utils';
 
 const logger = createLogger('SubmitDataHandler');
@@ -58,6 +58,6 @@ export async function execute(
     }
   } catch (error) {
     logger.error('Submit data error', error instanceof Error ? error : undefined);
-    sendError(ws, (error as Error).message, ErrorCode.SUBMIT_DATA_ERROR);
+    sendSafeError(ws, error, ErrorCode.SUBMIT_DATA_ERROR);
   }
 }

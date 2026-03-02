@@ -44,7 +44,7 @@ export class RedisConnector implements ICacheConnector {
     });
 
     await this.client.connect();
-    logger.info('Redis connected', { url: this.config.url });
+    logger.info('Redis connected');
   }
 
   async disconnect(): Promise<void> {

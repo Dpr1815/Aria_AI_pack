@@ -44,7 +44,7 @@ import { SynthesisService, createSynthesisService } from './services/speech/Synt
 import { createWebSocketController, type WebSocketController } from '@controllers';
 import { WebSocketRateLimiter } from './middleware/WebSocketRateLimiter';
 
-import { setupWebSocketRoute, createHealthHandler, createHttpRouter } from '@routes';
+import { setupWebSocketRoute, createHealthHandler, createReadyHandler, createHttpRouter } from '@routes';
 
 import type { HandlerServices, HandlerRepositories } from '@types';
 import { createLogger } from '@utils';
@@ -258,7 +258,12 @@ export async function startServer(app: AppCore): Promise<ServerInstance> {
     includeMemoryStats: true,
   });
 
-  const httpServer = createServer(createHttpRouter([healthHandler]));
+  const readyHandler = createReadyHandler({
+    pingDb: () => app.connectors.database.ping(),
+    pingCache: () => app.connectors.cache.ping(),
+  });
+
+  const httpServer = createServer(createHttpRouter([healthHandler, readyHandler]));
 
   const wss = setupWebSocketRoute(httpServer, app.controller, {
     path: serverConfig.websocket.path,

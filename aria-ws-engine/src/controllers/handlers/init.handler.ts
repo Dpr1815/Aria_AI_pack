@@ -21,7 +21,7 @@ import {
   type SessionReadyMessage,
   type ResponseMessage,
 } from '@types';
-import { send, sendError, streamSynthesis } from './ws.utils';
+import { send, sendError, sendSafeError, streamSynthesis } from './ws.utils';
 import { createLogger } from '@utils';
 
 const logger = createLogger('InitHandler');
@@ -83,6 +83,6 @@ export async function execute(
     logger.info(`Init complete`, { sessionId: session._id.toString() });
   } catch (error) {
     logger.error('Init handler error', error instanceof Error ? error : undefined);
-    sendError(ws, (error as Error).message, ErrorCode.INIT_ERROR);
+    sendSafeError(ws, error, ErrorCode.INIT_ERROR);
   }
 }

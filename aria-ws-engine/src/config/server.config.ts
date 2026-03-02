@@ -11,7 +11,7 @@ import { logger } from '@utils';
 // ============================================
 
 const {
-  PORT = '5000',
+  PORT = '3000',
   HOST = '0.0.0.0',
   NODE_ENV = 'development',
   SESSION_JWT_SECRET = '',

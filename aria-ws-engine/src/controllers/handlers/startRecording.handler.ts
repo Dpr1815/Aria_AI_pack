@@ -7,7 +7,7 @@
 
 import type { WebSocket } from 'ws';
 import { ErrorCode, type ClientMessage, type HandlerContext } from '@types';
-import { sendError } from './ws.utils';
+import { sendSafeError } from './ws.utils';
 import { createLogger } from '@utils';
 
 const logger = createLogger('StartRecordingHandler');
@@ -44,6 +44,6 @@ export async function execute(
     connectionState.transcriptionSessionId = transcriptionSessionId;
   } catch (error) {
     logger.error('Start recording error', error instanceof Error ? error : undefined);
-    sendError(ws, (error as Error).message, ErrorCode.START_RECORDING_ERROR);
+    sendSafeError(ws, error, ErrorCode.START_RECORDING_ERROR);
   }
 }

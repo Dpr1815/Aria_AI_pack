@@ -36,6 +36,16 @@ export interface HealthRouteConfig {
 }
 
 /**
+ * Readiness check configuration
+ */
+export interface ReadinessConfig {
+  /** Ping database */
+  pingDb: () => Promise<unknown>;
+  /** Ping cache */
+  pingCache: () => Promise<unknown>;
+}
+
+/**
  * Creates a health check request handler
  *
  * @param config - Health route configuration
@@ -83,10 +93,64 @@ export function createHealthHandler(config: HealthRouteConfig = {}) {
 }
 
 /**
- * Request handler type
- * Returns true if the request was handled, false to continue to next handler
+ * Creates a readiness check handler for /health/ready
+ *
+ * Pings database and cache in parallel, returns 503 if any check fails.
  */
-export type HttpRequestHandler = (req: IncomingMessage, res: ServerResponse) => boolean;
+export function createReadyHandler(config: ReadinessConfig) {
+  return async (req: IncomingMessage, res: ServerResponse): Promise<boolean> => {
+    if (req.url !== '/health/ready' || req.method !== 'GET') return false;
+
+    const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
+
+    const results = await Promise.allSettled([
+      pingCheck('database', config.pingDb),
+      pingCheck('cache', config.pingCache),
+    ]);
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        const [name, check] = result.value;
+        checks[name] = check;
+      }
+    }
+
+    const isReady = Object.values(checks).every((c) => c.status === 'healthy');
+    const status = isReady ? 200 : 503;
+
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      success: isReady,
+      status: isReady ? 'ready' : 'not_ready',
+      timestamp: new Date().toISOString(),
+      checks,
+    }));
+    return true;
+  };
+}
+
+async function pingCheck(
+  name: string,
+  fn: () => Promise<unknown>,
+): Promise<[string, { status: string; latencyMs?: number; error?: string }]> {
+  try {
+    const start = Date.now();
+    await fn();
+    return [name, { status: 'healthy', latencyMs: Date.now() - start }];
+  } catch (error) {
+    return [name, { status: 'unhealthy', error: error instanceof Error ? error.message : 'Unknown error' }];
+  }
+}
+
+/**
+ * Request handler type
+ * Returns true if the request was handled, false to continue to next handler.
+ * May be synchronous or asynchronous.
+ */
+export type HttpRequestHandler = (
+  req: IncomingMessage,
+  res: ServerResponse,
+) => boolean | Promise<boolean>;
 
 /**
  * Creates a simple HTTP request router
@@ -101,7 +165,7 @@ export type HttpRequestHandler = (req: IncomingMessage, res: ServerResponse) => 
  * ```typescript
  * const router = createHttpRouter([
  *   healthHandler,
- *   metricsHandler,
+ *   readyHandler,
  * ]);
  * const server = createServer(router);
  * ```
@@ -110,14 +174,16 @@ export function createHttpRouter(
   handlers: HttpRequestHandler[]
 ): (req: IncomingMessage, res: ServerResponse) => void {
   return (req: IncomingMessage, res: ServerResponse): void => {
-    for (const handler of handlers) {
-      if (handler(req, res)) {
-        return;
+    void (async () => {
+      for (const handler of handlers) {
+        if (await handler(req, res)) {
+          return;
+        }
       }
-    }
 
-    // No handler matched - return 404
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Not found' }));
+      // No handler matched - return 404
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Not found' }));
+    })();
   };
 }
