@@ -11,6 +11,18 @@ import { createLogger, retryWithBackoff, CircuitBreaker, ExternalServiceError } 
 
 const logger = createLogger('OpenAIConnector');
 
+function isRetryableOpenAIError(error: unknown): boolean {
+  if (error instanceof OpenAI.APIError) {
+    const status = error.status;
+    return status === 429 || status === 500 || status === 502 || status === 503;
+  }
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    return msg.includes('timeout') || msg.includes('network') || msg.includes('econnreset');
+  }
+  return false;
+}
+
 export class OpenAIConnector implements ILLMConnector {
   private readonly client: OpenAI;
   private readonly breaker: CircuitBreaker;
@@ -19,24 +31,27 @@ export class OpenAIConnector implements ILLMConnector {
   private readonly defaultTemperature: number;
 
   constructor(config: LLMConnectorConfig) {
-    this.client = new OpenAI({ apiKey: config.apiKey });
+    this.client = new OpenAI({
+      apiKey: config.apiKey,
+      timeout: config.timeoutMs ?? 360_000,
+    });
     this.breaker = new CircuitBreaker('OpenAI', {
       failureThreshold: 5,
       resetTimeoutMs: 30_000,
       monitorWindowMs: 60_000,
     });
-    this.defaultModel = config.defaultModel || PROMPT_CONFIG.DEFAULT_MODEL;
-    this.defaultMaxTokens = config.defaultMaxTokens || PROMPT_CONFIG.DEFAULT_MAX_TOKENS;
-    this.defaultTemperature = config.defaultTemperature || PROMPT_CONFIG.DEFAULT_TEMPERATURE;
+    this.defaultModel = config.defaultModel ?? PROMPT_CONFIG.DEFAULT_MODEL;
+    this.defaultMaxTokens = config.defaultMaxTokens ?? PROMPT_CONFIG.DEFAULT_MAX_TOKENS;
+    this.defaultTemperature = config.defaultTemperature ?? PROMPT_CONFIG.DEFAULT_TEMPERATURE;
   }
 
   async complete(
     messages: LLMMessage[],
     config?: LLMCompletionConfig
   ): Promise<LLMCompletionResult> {
-    const model = config?.model || this.defaultModel;
-    const maxTokens = config?.maxTokens || this.defaultMaxTokens;
-    const temperature = config?.temperature || this.defaultTemperature;
+    const model = config?.model ?? this.defaultModel;
+    const maxTokens = config?.maxTokens ?? this.defaultMaxTokens;
+    const temperature = config?.temperature ?? this.defaultTemperature;
 
     logger.debug('Calling OpenAI API', {
       model,
@@ -55,7 +70,7 @@ export class OpenAIConnector implements ILLMConnector {
             temperature,
           });
         },
-        { maxRetries: 3, initialDelayMs: 1000 }
+        { maxRetries: 3, initialDelayMs: 1000, shouldRetry: isRetryableOpenAIError }
       );
 
       const choice = response.choices[0];
@@ -77,9 +92,9 @@ export class OpenAIConnector implements ILLMConnector {
     messages: LLMMessage[],
     config?: Omit<LLMCompletionConfig, 'responseFormat'>
   ): Promise<LLMJSONCompletionResult<T>> {
-    const model = config?.model || this.defaultModel;
-    const maxTokens = config?.maxTokens || this.defaultMaxTokens;
-    const temperature = config?.temperature || this.defaultTemperature;
+    const model = config?.model ?? this.defaultModel;
+    const maxTokens = config?.maxTokens ?? this.defaultMaxTokens;
+    const temperature = config?.temperature ?? this.defaultTemperature;
 
     logger.debug('Calling OpenAI API (JSON mode)', {
       model,
@@ -99,7 +114,7 @@ export class OpenAIConnector implements ILLMConnector {
             response_format: { type: 'json_object' },
           });
         },
-        { maxRetries: 3, initialDelayMs: 1000 }
+        { maxRetries: 3, initialDelayMs: 1000, shouldRetry: isRetryableOpenAIError }
       );
 
       const choice = response.choices[0];

@@ -38,25 +38,7 @@ export function setContextValue(key: string, value: unknown): void {
 }
 
 const LOG_LEVEL = (process.env.LOG_LEVEL as LogLevel) || 'info';
-const LOG_DIR = process.env.LOG_DIR || 'logs';
-const LOG_FILE = process.env.LOG_FILE || 'app.log';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-
-function ensureLogDirectory(logDir: string): void {
-  if (!existsSync(logDir)) {
-    mkdirSync(logDir, { recursive: true });
-  }
-}
-
-ensureLogDirectory(LOG_DIR);
-
-const logFilePath = path.join(LOG_DIR, LOG_FILE);
-
-const fileDestination = destination({
-  dest: logFilePath,
-  sync: false,
-  mkdir: true,
-});
 
 const baseConfig: pino.LoggerOptions = {
   level: LOG_LEVEL,
@@ -71,11 +53,23 @@ const baseConfig: pino.LoggerOptions = {
 let baseLogger: PinoLogger;
 
 if (IS_PRODUCTION) {
-  baseLogger = pino(
-    baseConfig,
-    pino.multistream([{ stream: process.stdout }, { stream: fileDestination }])
-  );
+  // In production / containers: stdout only — let the orchestrator handle log collection
+  baseLogger = pino(baseConfig);
 } else {
+  // Dev: pretty-print + local file for convenience
+  const LOG_DIR = process.env.LOG_DIR || 'logs';
+  const LOG_FILE = process.env.LOG_FILE || 'app.log';
+
+  if (!existsSync(LOG_DIR)) {
+    mkdirSync(LOG_DIR, { recursive: true });
+  }
+
+  const fileDestination = destination({
+    dest: path.join(LOG_DIR, LOG_FILE),
+    sync: false,
+    mkdir: true,
+  });
+
   let prettyStream: NodeJS.WritableStream;
 
   try {
@@ -94,11 +88,11 @@ if (IS_PRODUCTION) {
     baseConfig,
     pino.multistream([{ stream: prettyStream }, { stream: fileDestination }])
   );
-}
 
-process.on('beforeExit', () => {
-  fileDestination.flushSync();
-});
+  process.on('beforeExit', () => {
+    fileDestination.flushSync();
+  });
+}
 
 export const logger = {
   debug: (msg: string, data?: Record<string, unknown>) => baseLogger.debug(data ?? {}, msg),

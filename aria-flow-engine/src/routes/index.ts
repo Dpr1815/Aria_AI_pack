@@ -20,10 +20,15 @@ import { createInternalRouter } from './internal.routes';
 import { requestLogger } from '@utils/logger';
 import { createCategoryRouter } from './category.routes';
 
+interface AppOptions {
+  corsOrigin: string | string[];
+}
+
 export function createExpressApp(
   connectors: Connectors,
   controllers: Controllers,
-  middleware: Middleware
+  middleware: Middleware,
+  options: AppOptions
 ): Application {
   const app = express();
 
@@ -31,7 +36,7 @@ export function createExpressApp(
   app.use(helmet());
   app.use(
     cors({
-      origin: '*',
+      origin: options.corsOrigin,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Organization-ID'],
@@ -47,7 +52,7 @@ export function createExpressApp(
   app.use(requestLogger());
 
   // Health check (public)
-  app.use('/health', createHealthRouter({ db: connectors.database }));
+  app.use('/health', createHealthRouter({ db: connectors.database, cache: connectors.cache }));
 
   // ============================================
   // INTERNAL SERVICE-TO-SERVICE ROUTES

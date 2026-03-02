@@ -61,7 +61,8 @@ export const createParticipantRouter = (deps: ParticipantRouterDependencies): Ro
 
   /**
    * DELETE /participants/:id
-   * Delete participant and cascade delete all sessions/conversations
+   * Delete participant's sessions for tenant's agents (cascade to conversations)
+   * Deletes participant record only if no sessions remain across any tenant
    */
   router.delete(
     '/:id',
@@ -69,6 +70,7 @@ export const createParticipantRouter = (deps: ParticipantRouterDependencies): Ro
     deps.tenant,
     validateParams(ParticipantIdParamSchema),
     requireTenantRole(Role.ADMIN),
+    deps.tenantScope.resolveAgentIds(),
     c.delete
   );
 

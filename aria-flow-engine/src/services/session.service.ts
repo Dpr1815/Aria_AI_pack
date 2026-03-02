@@ -65,7 +65,8 @@ export class SessionService {
   ) {
     this.config = {
       jwtSecret: config.jwtSecret,
-      accessTokenExpirySeconds: config.accessTokenExpirySeconds ?? DEFAULT_ACCESS_TOKEN_EXPIRY_SECONDS,
+      accessTokenExpirySeconds:
+        config.accessTokenExpirySeconds ?? DEFAULT_ACCESS_TOKEN_EXPIRY_SECONDS,
     };
   }
 
@@ -95,7 +96,10 @@ export class SessionService {
    * Test join - allows the agent owner (or org member) to join
    * regardless of agent status, for testing conversations.
    */
-  async testJoinSession(input: JoinSessionInput, tenant: TenantContext): Promise<JoinSessionResponseDTO> {
+  async testJoinSession(
+    input: JoinSessionInput,
+    tenant: TenantContext
+  ): Promise<JoinSessionResponseDTO> {
     const agent = await this.agentService.getAgent(input.agentId, {
       includeSteps: false,
       includePrompts: false,
@@ -158,7 +162,14 @@ export class SessionService {
   /**
    * Complete a session   */
   async completeSession(sessionId: string | ObjectId): Promise<SessionDTO> {
-    const session = await this.sessionRepository.updateStatus(toObjectId(sessionId), 'completed');
+    const id = toObjectId(sessionId);
+    const existing = await this.sessionRepository.findByIdOrThrow(id, 'Session');
+
+    if (existing.status !== 'active') {
+      throw new ValidationError(`Cannot complete session with status '${existing.status}' (must be 'active')`);
+    }
+
+    const session = await this.sessionRepository.updateStatus(id, 'completed');
     if (!session) {
       throw new NotFoundError('Session', String(sessionId));
     }
@@ -170,7 +181,14 @@ export class SessionService {
   /**
    * Abandon a session   */
   async abandonSession(sessionId: string | ObjectId): Promise<SessionDTO> {
-    const session = await this.sessionRepository.updateStatus(toObjectId(sessionId), 'abandoned');
+    const id = toObjectId(sessionId);
+    const existing = await this.sessionRepository.findByIdOrThrow(id, 'Session');
+
+    if (existing.status !== 'active') {
+      throw new ValidationError(`Cannot abandon session with status '${existing.status}' (must be 'active')`);
+    }
+
+    const session = await this.sessionRepository.updateStatus(id, 'abandoned');
     if (!session) {
       throw new NotFoundError('Session', String(sessionId));
     }
@@ -271,8 +289,8 @@ export class SessionService {
         return { valid: false, error: 'Session not found or token expired' };
       }
 
-      if (session.status === 'completed') {
-        return { valid: false, error: 'Session is completed' };
+      if (session.status === 'completed' || session.status === 'abandoned') {
+        return { valid: false, error: `Session is ${session.status}` };
       }
 
       return { valid: true, session, payload };
@@ -380,7 +398,10 @@ export class SessionService {
   /**
    * Shared session creation/resumption logic used by both joinSession and testJoinSession.
    */
-  private async resolveSession(agent: AgentDTO, input: JoinSessionInput): Promise<JoinSessionResponseDTO> {
+  private async resolveSession(
+    agent: AgentDTO,
+    input: JoinSessionInput
+  ): Promise<JoinSessionResponseDTO> {
     const agentId = new ObjectId(agent._id);
 
     const { participant, created: participantCreated } =
@@ -407,33 +428,26 @@ export class SessionService {
       }
     }
 
-    const {
-      token: accessToken,
-      hash: accessTokenHash,
-      expiresAt,
-    } = this.generateAccessToken(session?._id || new ObjectId(), participantId, agentId);
-
     if (!session) {
       const initialStep = agent.stepOrder?.[0] || 'intro';
 
+      // Create session first, then generate token with the real session ID
       session = await this.sessionRepository.create({
         agentId,
         participantId,
         agentOwnerId: new ObjectId(agent.ownerId),
-        accessTokenHash,
-        accessTokenExpiresAt: expiresAt,
+        accessTokenHash: '',
+        accessTokenExpiresAt: new Date(),
         status: 'active',
         currentStep: initialStep,
         data: {},
         lastActivityAt: new Date(),
       } as Omit<SessionDocument, '_id' | 'createdAt' | 'updatedAt'>);
 
-      const actualToken = this.generateAccessToken(session._id, participantId, agentId);
-      await this.sessionRepository.updateAccessToken(
-        session._id,
-        actualToken.hash,
-        actualToken.expiresAt
-      );
+      const { token: accessToken, hash: accessTokenHash, expiresAt } =
+        this.generateAccessToken(session._id, participantId, agentId);
+
+      await this.sessionRepository.updateAccessToken(session._id, accessTokenHash, expiresAt);
 
       await this.conversationService.createForSession(session._id, agentId, participantId);
 
@@ -444,14 +458,11 @@ export class SessionService {
         participantCreated,
       });
 
-      return this.buildJoinResponse(
-        session,
-        actualToken.token,
-        actualToken.expiresAt,
-        false,
-        participant
-      );
+      return this.buildJoinResponse(session, accessToken, expiresAt, false, participant);
     } else {
+      const { token: accessToken, hash: accessTokenHash, expiresAt } =
+        this.generateAccessToken(session._id, participantId, agentId);
+
       await this.sessionRepository.updateAccessToken(session._id, accessTokenHash, expiresAt);
       session = await this.sessionRepository.findByIdOrThrow(session._id, 'Session');
 

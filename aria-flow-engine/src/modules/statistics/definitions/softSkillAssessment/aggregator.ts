@@ -1,13 +1,13 @@
 /**
- * L&D Statistics Aggregator
+ * SSA Statistics Aggregator
  *
- * Pure function that computes aggregate metrics from L&D summaries.
+ * Pure function that computes aggregate metrics from soft skill assessment summaries.
  * Each summary's `data` field contains a `sections` object keyed by step key
- * (e.g. data.sections.knowledgeTransfer, data.sections.practicalApplication).
+ * (e.g. data.sections.ssaRolePlay, data.sections.ssaScenarioQuestions, data.sections.ssaOpenQuestions).
  */
 
 import { AggregatorInput } from '../../types';
-import { FrequencyItem, LDStatisticsData, ScoreDistribution } from './schema';
+import { FrequencyItem, SSAStatisticsData, ScoreDistribution } from './schema';
 
 // ============================================
 // HELPERS
@@ -106,14 +106,14 @@ function sectionPath(sectionKey: string, field: string): string {
 // SECTION AGGREGATORS
 // ============================================
 
-function aggregateKnowledgeTransfer(summaries: AggregatorInput['summaries']) {
-  const key = 'knowledgeTransfer';
+function aggregateRolePlay(summaries: AggregatorInput['summaries']) {
+  const key = 'ssaRolePlay';
   const scores = collectNumericValues(summaries, sectionPath(key, 'score'));
   return {
     averageScore: average(scores),
     scoreDistribution: computeDistribution(scores),
-    averageComprehensionScore: average(
-      collectNumericValues(summaries, sectionPath(key, 'comprehensionScore'))
+    averageTurningPointHandling: average(
+      collectNumericValues(summaries, sectionPath(key, 'turningPointHandling'))
     ),
     topStrengths: topFrequencies(collectStringArrays(summaries, sectionPath(key, 'strengths'))),
     topAreasForImprovement: topFrequencies(
@@ -122,17 +122,30 @@ function aggregateKnowledgeTransfer(summaries: AggregatorInput['summaries']) {
   };
 }
 
-function aggregatePracticalApplication(summaries: AggregatorInput['summaries']) {
-  const key = 'practicalApplication';
+function aggregateScenarioQuestions(summaries: AggregatorInput['summaries']) {
+  const key = 'ssaScenarioQuestions';
   const scores = collectNumericValues(summaries, sectionPath(key, 'score'));
   return {
     averageScore: average(scores),
     scoreDistribution: computeDistribution(scores),
-    averageScenarioPerformance: average(
-      collectNumericValues(summaries, sectionPath(key, 'scenarioPerformance'))
+    averageSituationalAwareness: average(
+      collectNumericValues(summaries, sectionPath(key, 'situationalAwareness'))
     ),
-    averageProblemSolvingScore: average(
-      collectNumericValues(summaries, sectionPath(key, 'problemSolvingScore'))
+    topStrengths: topFrequencies(collectStringArrays(summaries, sectionPath(key, 'strengths'))),
+    topAreasForImprovement: topFrequencies(
+      collectStringArrays(summaries, sectionPath(key, 'areasForImprovement'))
+    ),
+  };
+}
+
+function aggregateOpenQuestions(summaries: AggregatorInput['summaries']) {
+  const key = 'ssaOpenQuestions';
+  const scores = collectNumericValues(summaries, sectionPath(key, 'score'));
+  return {
+    averageScore: average(scores),
+    scoreDistribution: computeDistribution(scores),
+    averageSelfAwareness: average(
+      collectNumericValues(summaries, sectionPath(key, 'selfAwareness'))
     ),
     topStrengths: topFrequencies(collectStringArrays(summaries, sectionPath(key, 'strengths'))),
     topAreasForImprovement: topFrequencies(
@@ -149,11 +162,12 @@ const SECTION_AGGREGATORS: Record<
   string,
   (summaries: AggregatorInput['summaries']) => Record<string, unknown>
 > = {
-  knowledgeTransfer: aggregateKnowledgeTransfer,
-  practicalApplication: aggregatePracticalApplication,
+  ssaRolePlay: aggregateRolePlay,
+  ssaScenarioQuestions: aggregateScenarioQuestions,
+  ssaOpenQuestions: aggregateOpenQuestions,
 };
 
-export function ldAggregator(input: AggregatorInput): LDStatisticsData {
+export function ssaAggregator(input: AggregatorInput): SSAStatisticsData {
   const { summaries } = input;
 
   const sections: Record<string, Record<string, unknown>> = {};
@@ -167,5 +181,5 @@ export function ldAggregator(input: AggregatorInput): LDStatisticsData {
   return {
     totalSummariesAnalyzed: summaries.length,
     sections,
-  } as LDStatisticsData;
+  } as SSAStatisticsData;
 }

@@ -1,13 +1,36 @@
 import { Router, Request, Response } from "express";
 import { IDatabase } from "../connectors/database/IDatabase";
+import { ICacheConnector } from "../connectors/cache/ICacheConnector";
 
 export interface HealthRouterDependencies {
   db: IDatabase;
+  cache: ICacheConnector;
+}
+
+type CheckResult = { status: string; latencyMs?: number; error?: string };
+
+async function checkDependency(
+  name: string,
+  fn: () => Promise<unknown>,
+): Promise<[string, CheckResult]> {
+  try {
+    const start = Date.now();
+    await fn();
+    return [name, { status: "healthy", latencyMs: Date.now() - start }];
+  } catch (error) {
+    return [
+      name,
+      {
+        status: "unhealthy",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+    ];
+  }
 }
 
 export const createHealthRouter = (deps: HealthRouterDependencies): Router => {
   const router = Router();
-  const { db } = deps;
+  const { db, cache } = deps;
 
   router.get("/", (_req: Request, res: Response) => {
     res.json({
@@ -18,24 +41,12 @@ export const createHealthRouter = (deps: HealthRouterDependencies): Router => {
   });
 
   router.get("/ready", async (_req: Request, res: Response) => {
-    const checks: Record<
-      string,
-      { status: string; latencyMs?: number; error?: string }
-    > = {};
+    const results = await Promise.all([
+      checkDependency("database", () => db.ping()),
+      checkDependency("cache", () => cache.ping()),
+    ]);
 
-    try {
-      const start = Date.now();
-      await db.ping();
-      checks.database = {
-        status: "healthy",
-        latencyMs: Date.now() - start,
-      };
-    } catch (error) {
-      checks.database = {
-        status: "unhealthy",
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
+    const checks = Object.fromEntries(results);
 
     const isReady = Object.values(checks).every(
       (check) => check.status === "healthy",

@@ -15,7 +15,7 @@
  */
 
 import { AggregatorInput, StatisticsDefinition, StatisticsRegistryEntry } from './types';
-import { INTERVIEW_STATISTICS_ID, interviewStatisticsConfig, LD_STATISTICS_ID, ldStatisticsConfig } from './definitions';
+import { INTERVIEW_STATISTICS_ID, interviewStatisticsConfig, LD_STATISTICS_ID, ldStatisticsConfig, SSA_STATISTICS_ID, ssaStatisticsConfig } from './definitions';
 import { StatisticsTypeDTO } from '@models';
 import { NotFoundError } from '../../utils/errors';
 
@@ -30,6 +30,9 @@ const statisticsRegistry: Record<string, StatisticsRegistryEntry> = {
   [LD_STATISTICS_ID]: {
     config: ldStatisticsConfig,
   },
+  [SSA_STATISTICS_ID]: {
+    config: ssaStatisticsConfig,
+  },
 };
 
 // ============================================
@@ -38,6 +41,7 @@ const statisticsRegistry: Record<string, StatisticsRegistryEntry> = {
 
 export { INTERVIEW_STATISTICS_ID } from './definitions';
 export { LD_STATISTICS_ID } from './definitions';
+export { SSA_STATISTICS_ID } from './definitions';
 
 /**
  * Default statistics type ID used when an agent has no explicit statisticsTypeId.

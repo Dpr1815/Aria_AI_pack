@@ -18,4 +18,5 @@ export interface LLMConnectorConfig {
   defaultModel?: string;
   defaultMaxTokens?: number;
   defaultTemperature?: number;
+  timeoutMs?: number;
 }

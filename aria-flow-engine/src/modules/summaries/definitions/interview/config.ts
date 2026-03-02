@@ -74,7 +74,7 @@ const behavioralSection: SummarySectionDefinition = {
 };
 
 const linguisticSection: SummarySectionDefinition = {
-  key: 'linguistic',
+  key: 'linguisticTest',
   promptId: 'interview_summary_linguistic',
   required: false,
   variables: {

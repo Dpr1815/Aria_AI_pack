@@ -243,12 +243,18 @@ export class ParticipantRepository extends BaseRepository<ParticipantDocument> {
   }
 
   /**
-   * Get session IDs for a participant (for cascade delete)
+   * Get session IDs for a participant, scoped to specific agents
+   *
+   * Used for tenant-scoped cascade deletion — only returns sessions
+   * belonging to the tenant's agents.
    */
-  async getSessionIds(participantId: ObjectId): Promise<ObjectId[]> {
+  async getSessionIds(participantId: ObjectId, agentIds: ObjectId[]): Promise<ObjectId[]> {
     const sessions = await this.db
       .getCollection('sessions')
-      .find({ participantId }, { projection: { _id: 1 } })
+      .find(
+        { participantId, agentId: { $in: agentIds } },
+        { projection: { _id: 1 } }
+      )
       .toArray();
 
     return sessions.map((s) => s._id as ObjectId);

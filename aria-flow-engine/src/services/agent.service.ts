@@ -117,7 +117,7 @@ export class AgentService {
       stepOrder,
       summaryTypeId: input.summaryTypeId,
       statisticsTypeId: input.statisticsTypeId,
-      status: AgentStatus.ACTIVE,
+      status: AgentStatus.INACTIVE,
     };
 
     if (organizationId) {
@@ -206,14 +206,18 @@ export class AgentService {
    */
   async listAgents(
     tenant: TenantContext,
-    query: AgentQueryInput,
+    query: AgentQueryInput
   ): Promise<PaginatedResult<AgentListItemDTO>> {
     const { status, page, limit } = query;
 
     let result: PaginatedResult<AgentDocument>;
 
     if (tenant.type === 'personal') {
-      result = await this.agentRepository.findPersonalAgents(tenant.userId, { status, page, limit });
+      result = await this.agentRepository.findPersonalAgents(tenant.userId, {
+        status,
+        page,
+        limit,
+      });
     } else {
       result = await this.agentRepository.findOrganizationAgents(tenant.organizationId, {
         status,
@@ -429,7 +433,10 @@ export class AgentService {
     return this.stepsToResponse(steps);
   }
 
-  async getAgentStep(agentId: string | ObjectId, stepKey: string): Promise<Record<string, unknown>> {
+  async getAgentStep(
+    agentId: string | ObjectId,
+    stepKey: string
+  ): Promise<Record<string, unknown>> {
     const objectId = toObjectId(agentId);
     await this.agentRepository.findByIdOrThrow(objectId, 'Agent');
     const step = await this.agentStepRepository.findByAgentAndKeyOrThrow(objectId, stepKey);
@@ -451,7 +458,12 @@ export class AgentService {
     const agent = await this.agentRepository.findByIdOrThrow(objectId, 'Agent');
 
     if (input.inputs !== undefined) {
-      validateStepInputs(stepKey, input.inputs);
+      const validation = validateStepInputs(stepKey, input.inputs);
+      if (!validation.success) {
+        throw new ValidationError(
+          `Invalid inputs for step "${stepKey}": ${validation.errors?.join('; ')}`
+        );
+      }
     }
 
     const updateData: Record<string, unknown> = {};
@@ -495,7 +507,10 @@ export class AgentService {
    * Creates the step, its prompt, and any sub-steps if the step expands.
    * Validates inputs against the step's schema.
    */
-  async addAgentStep(agentId: string | ObjectId, input: AddStepInput): Promise<Record<string, unknown>> {
+  async addAgentStep(
+    agentId: string | ObjectId,
+    input: AddStepInput
+  ): Promise<Record<string, unknown>> {
     const objectId = toObjectId(agentId);
 
     const agent = await this.agentRepository.findByIdOrThrow(objectId, 'Agent');

@@ -48,9 +48,6 @@ GCS_KEY_FILE_PATH=./credentials/service-account.json
 GCS_SIGNED_URL_EXPIRY_SECONDS=604800
 GCS_MAX_FILE_SIZE_BYTES=52428800
 
-# Redis (cache / rate-limiting)
-REDIS_URL=redis://localhost:6379
-REDIS_ENABLED=true
 # Optional
 LOG_LEVEL=info
 ```

@@ -32,7 +32,7 @@ module.exports = {
     '!src/config/database.config.ts',
     '!src/config/storage.config.ts',
     '!src/config/cache.config.ts',
-    // Video service is infrastructure (file upload/processing), tested at E2E level
+    // Video service is infrastructure (file upload/processing) — not unit-testable
     '!src/services/video.service.ts',
     // Multer upload middleware — infrastructure configuration
     '!src/middleware/upload.middleware.ts',

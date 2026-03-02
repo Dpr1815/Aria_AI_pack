@@ -86,7 +86,18 @@ export class StepSequencer {
    *
    * @throws ValidationError if position is invalid
    */
-  validateInsertionPosition(_stepKey: string, order: number, currentStepOrder: string[]): void {
+  validateInsertionPosition(stepKey: string, order: number, currentStepOrder: string[]): void {
+    // Validate the inserted step's own position constraints
+    if (isFirstPositionStep(stepKey) && order !== 1) {
+      throw new ValidationError(`Step "${stepKey}" has position 'first' and must be inserted at position 1`);
+    }
+
+    const insertionLastPos = currentStepOrder.length + 1;
+    if (isLastPositionStep(stepKey) && order < insertionLastPos) {
+      throw new ValidationError(`Step "${stepKey}" has position 'last' and must be inserted at the end`);
+    }
+
+    // Validate that existing position-constrained steps are not displaced
     if (order === 1) {
       const firstStep = currentStepOrder[0];
       if (firstStep && isFirstPositionStep(firstStep)) {
@@ -110,23 +121,30 @@ export class StepSequencer {
   /**
    * Expand selected steps into all required sub-steps
    *
-   * Maintains order: INTRO first, CONCLUSION last, others in selection order.
+   * Maintains order based on step definition position:
+   * - position: 'first' steps expanded first
+   * - position: 'flexible' steps in selection order
+   * - position: 'last' steps expanded last
    */
   expandSteps(selectedSteps: string[]): string[] {
     const expanded: string[] = [];
     const seen = new Set<string>();
 
-    if (selectedSteps.includes('intro')) {
-      this.expandStep('intro', expanded, seen);
+    for (const stepId of selectedSteps) {
+      if (isFirstPositionStep(stepId)) {
+        this.expandStep(stepId, expanded, seen);
+      }
     }
 
     for (const stepId of selectedSteps) {
-      if (stepId === 'intro' || stepId === 'conclusion') continue;
+      if (isFirstPositionStep(stepId) || isLastPositionStep(stepId)) continue;
       this.expandStep(stepId, expanded, seen);
     }
 
-    if (selectedSteps.includes('conclusion')) {
-      this.expandStep('conclusion', expanded, seen);
+    for (const stepId of selectedSteps) {
+      if (isLastPositionStep(stepId)) {
+        this.expandStep(stepId, expanded, seen);
+      }
     }
 
     return expanded;

@@ -32,7 +32,7 @@ export class RedisConnector implements ICacheConnector {
   async connect(): Promise<void> {
     this.client = new Redis(this.config.url, {
       lazyConnect: true,
-      maxRetriesPerRequest: 1,
+      maxRetriesPerRequest: 3,
       retryStrategy(times: number) {
         if (times > 3) return null;
         return Math.min(times * 200, 2000);
@@ -44,7 +44,7 @@ export class RedisConnector implements ICacheConnector {
     });
 
     await this.client.connect();
-    logger.info('Redis connected', { url: this.config.url });
+    logger.info('Redis connected');
   }
 
   async disconnect(): Promise<void> {

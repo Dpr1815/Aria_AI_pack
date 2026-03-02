@@ -57,14 +57,18 @@ export class ParticipantController {
 
   delete = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const result = await this.participantService.delete(req.params.id);
+      const result = await this.participantService.delete(req.params.id, req.tenantAgentIds!);
+
+      const message = result.participantDeleted
+        ? 'Participant and associated sessions deleted successfully'
+        : 'Participant sessions removed from your agents';
 
       res
         .status(200)
         .json(
           ApiResponseBuilder.success(
-            { sessionsDeleted: result.sessionsDeleted },
-            'Participant and associated sessions deleted successfully'
+            { sessionsDeleted: result.sessionsDeleted, participantDeleted: result.participantDeleted },
+            message
           )
         );
     } catch (error) {

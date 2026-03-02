@@ -114,14 +114,20 @@ export class ParticipantService {
   }
 
   /**
-   * Delete participant with cascade to sessions and conversations
+   * Delete participant's sessions scoped to the tenant's agents
+   *
+   * Only deletes sessions belonging to the provided agentIds.
+   * The participant record is removed only if no sessions remain across any tenant.
    */
-  async delete(participantId: string | ObjectId): Promise<{ sessionsDeleted: number }> {
+  async delete(
+    participantId: string | ObjectId,
+    agentIds: ObjectId[]
+  ): Promise<{ sessionsDeleted: number; participantDeleted: boolean }> {
     const id = toObjectId(participantId);
 
     await this.participantRepository.findByIdOrThrow(id, 'Participant');
 
-    const sessionIds = await this.participantRepository.getSessionIds(id);
+    const sessionIds = await this.participantRepository.getSessionIds(id, agentIds);
 
     if (sessionIds.length > 0) {
       await this.conversationRepository.deleteMany({
@@ -130,17 +136,24 @@ export class ParticipantService {
     }
 
     const sessionsDeleted = await this.sessionRepository.deleteMany({
-      participantId: id,
+      _id: { $in: sessionIds },
     });
 
-    await this.participantRepository.deleteByIdOrThrow(id, 'Participant');
+    const remainingCount = await this.participantRepository.countSessions(id);
+    let participantDeleted = false;
 
-    logger.info('Participant deleted with cascade', {
+    if (remainingCount === 0) {
+      await this.participantRepository.deleteByIdOrThrow(id, 'Participant');
+      participantDeleted = true;
+    }
+
+    logger.info('Participant delete cascade completed', {
       participantId: id.toString(),
       sessionsDeleted,
+      participantDeleted,
     });
 
-    return { sessionsDeleted };
+    return { sessionsDeleted, participantDeleted };
   }
 
   // ============================================

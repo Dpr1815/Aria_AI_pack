@@ -6,6 +6,26 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ErrorMiddleware');
 
+const SENSITIVE_FIELDS = new Set([
+  'password',
+  'currentPassword',
+  'newPassword',
+  'token',
+  'refreshToken',
+  'accessToken',
+  'secret',
+  'authorization',
+]);
+
+function redactSensitiveFields(obj: unknown): unknown {
+  if (!obj || typeof obj !== 'object') return obj;
+  const redacted: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    redacted[key] = SENSITIVE_FIELDS.has(key) ? '[REDACTED]' : value;
+  }
+  return redacted;
+}
+
 /**
  * Global error handling middleware
  * Converts errors to consistent API error responses
@@ -33,8 +53,8 @@ export const errorMiddleware = (
       requestId,
       path: req.path,
       method: req.method,
-      body: req.body,
-      query: req.query,
+      body: redactSensitiveFields(req.body),
+      query: redactSensitiveFields(req.query),
     });
   }
 

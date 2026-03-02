@@ -41,6 +41,18 @@ export function createRepositories(db: IDatabase): Repositories {
   };
 }
 
+/**
+ * Ensure all repository indexes exist.
+ * Safe to call on every startup — createIndex is idempotent.
+ */
+export async function ensureIndexes(repositories: Repositories): Promise<void> {
+  await Promise.all(
+    Object.values(repositories).map((repo) =>
+      'createIndexes' in repo ? (repo as { createIndexes(): Promise<void> }).createIndexes() : Promise.resolve()
+    )
+  );
+}
+
 export * from './base.repository';
 export * from './user.repository';
 export * from './organization.repository';

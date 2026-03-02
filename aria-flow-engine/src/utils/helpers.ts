@@ -40,6 +40,7 @@ export const retryWithBackoff = async <T>(
     initialDelayMs?: number;
     maxDelayMs?: number;
     backoffMultiplier?: number;
+    shouldRetry?: (error: unknown) => boolean;
   } = {}
 ): Promise<T> => {
   const {
@@ -47,6 +48,7 @@ export const retryWithBackoff = async <T>(
     initialDelayMs = 1000,
     maxDelayMs = 30000,
     backoffMultiplier = 2,
+    shouldRetry,
   } = options;
 
   let lastError: Error | undefined;
@@ -58,7 +60,7 @@ export const retryWithBackoff = async <T>(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
-      if (attempt === maxRetries) {
+      if (attempt === maxRetries || (shouldRetry && !shouldRetry(error))) {
         break;
       }
 

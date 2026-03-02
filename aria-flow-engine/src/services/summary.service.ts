@@ -253,7 +253,8 @@ export class SummaryService {
       result.timeAnalysis = timeAnalysis;
     }
 
-    return result;
+    // Validate complete output against the summary type's schema
+    return config.outputSchema.parse(result) as Record<string, unknown>;
   }
 
   // ============================================

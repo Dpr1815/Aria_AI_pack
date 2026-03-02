@@ -7,6 +7,7 @@ export interface ServerConfig {
   refreshTokenSecret: string;
   sessionTokenSecret: string;
   serviceTokenSecret: string;
+  corsOrigin: string | string[];
 }
 
 export const loadServerConfig = (): ServerConfig => {
@@ -23,19 +24,32 @@ export const loadServerConfig = (): ServerConfig => {
     throw new ConfigurationError('REFRESH_TOKEN_SECRET is required');
   }
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
   if (!sessionTokenSecret) {
+    if (isProduction) {
+      throw new ConfigurationError('SESSION_TOKEN_SECRET is required in production');
+    }
     console.warn(
       'Warning: SESSION_TOKEN_SECRET not set, falling back to ACCESS_TOKEN_SECRET. ' +
-        'Consider setting a separate secret for session tokens in production.'
+        'This is not allowed in production.'
     );
   }
 
   if (!serviceTokenSecret) {
+    if (isProduction) {
+      throw new ConfigurationError('SERVICE_TOKEN_SECRET is required in production');
+    }
     console.warn(
       'Warning: SERVICE_TOKEN_SECRET not set, falling back to ACCESS_TOKEN_SECRET. ' +
-        'Set a separate secret for service-to-service auth in production.'
+        'This is not allowed in production.'
     );
   }
+
+  const corsOriginRaw = process.env.CORS_ORIGIN || '*';
+  const corsOrigin = corsOriginRaw.includes(',')
+    ? corsOriginRaw.split(',').map((s) => s.trim())
+    : corsOriginRaw;
 
   return {
     port: parseInt(process.env.PORT || '8080', 10),
@@ -44,5 +58,6 @@ export const loadServerConfig = (): ServerConfig => {
     refreshTokenSecret,
     sessionTokenSecret: sessionTokenSecret || accessTokenSecret,
     serviceTokenSecret: serviceTokenSecret || accessTokenSecret,
+    corsOrigin,
   };
 };

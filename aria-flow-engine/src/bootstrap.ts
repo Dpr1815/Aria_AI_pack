@@ -3,7 +3,7 @@ import { Application } from 'express';
 
 import { loadConfig, AppConfig } from '@config';
 import { createConnectors, Connectors } from '@connectors';
-import { createRepositories, Repositories } from '@repositories';
+import { createRepositories, ensureIndexes, Repositories } from '@repositories';
 import { createServices, Services } from '@services';
 import { createMiddleware, Middleware } from '@middleware';
 import { Controllers, createControllers } from '@controllers';
@@ -65,6 +65,10 @@ export async function createApp(options: BootstrapOptions = {}): Promise<AppCore
   const repositories = createRepositories(connectors.database);
   log.info('Repositories ready');
 
+  log.info('Ensuring database indexes...');
+  await ensureIndexes(repositories);
+  log.info('Database indexes ready');
+
   log.info('Creating services...');
   const services = createServices(config, connectors, repositories);
   log.info('All services ready');
@@ -78,7 +82,9 @@ export async function createApp(options: BootstrapOptions = {}): Promise<AppCore
   log.info('Controllers ready');
 
   log.info('Creating Express app...');
-  const expressApp = createExpressApp(connectors, controllers, middleware);
+  const expressApp = createExpressApp(connectors, controllers, middleware, {
+    corsOrigin: config.server.corsOrigin,
+  });
   log.info('Express app ready');
 
   return {

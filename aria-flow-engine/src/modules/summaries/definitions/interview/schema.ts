@@ -79,12 +79,21 @@ export const IsAiCodeSchema = z.object({
 });
 
 // ============================================
-// FINAL REPORT SCHEMA (matches REPORT_FINAL prompt)
+// FINAL SUMMARY SCHEMA (complete output including sections)
 // ============================================
 
 export const InterviewSummaryDataSchema = z.object({
   overallEvaluation: z.string(),
   nextSteps: z.array(z.string()),
+  sections: z.object({
+    background: BackgroundSectionSchema.optional(),
+    work: ScenarioSectionSchema.optional(),
+    assessment: AssessmentSectionSchema.optional(),
+    behavioral: BehavioralSectionSchema.optional(),
+    linguisticTest: LinguisticSectionSchema.optional(),
+    workplaceSafety: WorkplaceSafetySectionSchema.optional(),
+  }),
+  timeAnalysis: TimeAnalysisSchema.optional(),
 });
 
 // ============================================

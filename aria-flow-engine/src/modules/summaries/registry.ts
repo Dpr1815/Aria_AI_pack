@@ -13,6 +13,7 @@
 import { SummaryDefinition, SummaryRegistryEntry } from './types';
 import { INTERVIEW_SUMMARY_ID, interviewSummaryConfig } from './definitions/interview';
 import { LD_SUMMARY_ID, ldSummaryConfig } from './definitions/learningDevelopment';
+import { SSA_SUMMARY_ID, ssaSummaryConfig } from './definitions/softSkillAssessment';
 import { SummaryTypeDTO } from '@models';
 import { NotFoundError } from '../../utils/errors';
 
@@ -27,6 +28,9 @@ const summaryRegistry: Record<string, SummaryRegistryEntry> = {
   [LD_SUMMARY_ID]: {
     config: ldSummaryConfig,
   },
+  [SSA_SUMMARY_ID]: {
+    config: ssaSummaryConfig,
+  },
 };
 
 // ============================================
@@ -35,6 +39,7 @@ const summaryRegistry: Record<string, SummaryRegistryEntry> = {
 
 export { INTERVIEW_SUMMARY_ID } from './definitions/interview';
 export { LD_SUMMARY_ID } from './definitions/learningDevelopment';
+export { SSA_SUMMARY_ID } from './definitions/softSkillAssessment';
 
 // ============================================
 // ACCESSORS

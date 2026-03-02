@@ -106,6 +106,8 @@ export class CircuitBreaker {
   private onSuccess(): void {
     if (this.state === CircuitState.HALF_OPEN) {
       this.reset();
+    } else if (this.failures.length > 0) {
+      this.failures = [];
     }
   }
 

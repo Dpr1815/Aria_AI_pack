@@ -9,6 +9,10 @@ import {
   learningDevelopmentSteps,
   learningDevelopmentStepSchemas,
 } from './learningDevelopment';
+import {
+  softSkillAssessmentSteps,
+  softSkillAssessmentStepSchemas,
+} from './softSkillAssessment';
 
 /**
  * STEP_REGISTRY_BY_CATEGORY - Category-keyed step definitions
@@ -17,6 +21,7 @@ import {
 export const STEP_REGISTRY_BY_CATEGORY: Record<string, Record<string, StepDefinition>> = {
   interview: interviewSteps,
   learningDevelopment: learningDevelopmentSteps,
+  softSkillAssessment: softSkillAssessmentSteps,
 };
 
 /**
@@ -33,7 +38,9 @@ export const STEP_REGISTRY: StepRegistry = Object.values(STEP_REGISTRY_BY_CATEGO
 export const STEP_INPUT_SCHEMAS: Record<string, ZodSchema> = {
   ...interviewStepSchemas,
   ...learningDevelopmentStepSchemas,
+  ...softSkillAssessmentStepSchemas,
 };
 
 export { interviewSteps, interviewStepSchemas };
 export { learningDevelopmentSteps, learningDevelopmentStepSchemas };
+export { softSkillAssessmentSteps, softSkillAssessmentStepSchemas };

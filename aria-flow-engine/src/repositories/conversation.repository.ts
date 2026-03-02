@@ -60,8 +60,11 @@ export class ConversationRepository extends BaseRepository<ConversationDocument>
   // ============================================
 
   /**
-   * Add a message to conversation
-   * Uses atomic $push and $inc for concurrency safety
+   * Add a message to conversation.
+   *
+   * NOTE: Sequence assignment is not atomic (read-then-write).
+   * Callers must serialize concurrent calls for the same session
+   * (e.g. via KeyedMutex in ConversationService).
    */
   async addMessage(
     sessionId: ObjectId,

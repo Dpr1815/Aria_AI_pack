@@ -68,8 +68,8 @@ function computeDistribution(values: number[]): ScoreDistribution {
     return { min: 0, max: 0, average: 0, median: 0 };
   }
   return {
-    min: Math.min(...values),
-    max: Math.max(...values),
+    min: values.reduce((m, v) => (v < m ? v : m), values[0]),
+    max: values.reduce((m, v) => (v > m ? v : m), values[0]),
     average: average(values),
     median: median(values),
   };

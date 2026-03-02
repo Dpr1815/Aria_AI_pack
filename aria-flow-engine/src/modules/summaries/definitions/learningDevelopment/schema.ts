@@ -23,7 +23,7 @@ export const PracticalApplicationSectionSchema = z.object({
 });
 
 // ============================================
-// FINAL REPORT SCHEMA (matches LD_SUMMARY_MAIN prompt)
+// FINAL SUMMARY SCHEMA (complete output including sections)
 // ============================================
 
 export const LDSummaryDataSchema = z.object({
@@ -32,6 +32,10 @@ export const LDSummaryDataSchema = z.object({
   knowledgeGainSummary: z.string(),
   readinessLevel: z.enum(['not_ready', 'partially_ready', 'ready']),
   recommendedNextSteps: z.array(z.string()),
+  sections: z.object({
+    knowledgeTransfer: KnowledgeTransferSectionSchema.optional(),
+    practicalApplication: PracticalApplicationSectionSchema.optional(),
+  }),
 });
 
 // ============================================
