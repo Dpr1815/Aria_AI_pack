@@ -180,12 +180,12 @@ describe('Participant Flow - Integration', () => {
         })
       );
 
-      // ============ STEP 4: DELETE PARTICIPANT ============
+      // ============ STEP 4: DELETE PARTICIPANT (tenant-scoped) ============
       jest.clearAllMocks();
 
       mockFindOne(participantsCollection, mockParticipants[0]);
 
-      // Mock getSessionIds find
+      // Mock getSessionIds find (scoped to tenant's agents)
       const sessionsCollection = mockDb.getCollection('sessions');
       mockFind(sessionsCollection, [
         { _id: new ObjectId() },
@@ -196,11 +196,15 @@ describe('Participant Flow - Integration', () => {
       const conversationsCollection = mockDb.getCollection('conversations');
       mockDeleteMany(conversationsCollection, 2);
       mockDeleteMany(sessionsCollection, 2);
+
+      // Mock countSessions returning 0 (no remaining sessions) → participant deleted
+      mockCountDocuments(sessionsCollection, 0);
       mockDeleteOne(participantsCollection, 1);
 
       const deleteReq = {
         user: { _id: mockUserId },
         tenant: mockTenant,
+        tenantAgentIds: [mockAgentId],
         params: { id: participantId.toString() },
       } as unknown as Request;
 
@@ -217,6 +221,7 @@ describe('Participant Flow - Integration', () => {
           success: true,
           data: expect.objectContaining({
             sessionsDeleted: 2,
+            participantDeleted: true,
           }),
         })
       );

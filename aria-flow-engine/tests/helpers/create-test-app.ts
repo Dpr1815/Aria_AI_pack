@@ -38,6 +38,7 @@ export const testConfig: AppConfig = {
     refreshTokenSecret: TEST_REFRESH_SECRET,
     sessionTokenSecret: TEST_SESSION_SECRET,
     serviceTokenSecret: TEST_SERVICE_SECRET,
+    corsOrigin: '*',
   },
   prompt: {
     defaultModel: 'gpt-4',
@@ -84,7 +85,9 @@ export function createTestApp(): TestApp {
   const services = createServices(testConfig, connectors, repositories);
   const middleware = createMiddleware(testConfig, repositories, services);
   const controllers = createControllers(services, connectors);
-  const app = createExpressApp(connectors, controllers, middleware);
+  const app = createExpressApp(connectors, controllers, middleware, {
+    corsOrigin: testConfig.server.corsOrigin,
+  });
 
   return { app, mockDb, config: testConfig, repositories, services, middleware, controllers };
 }

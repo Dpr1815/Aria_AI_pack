@@ -162,18 +162,20 @@ describe('SessionService', () => {
   describe('completeSession', () => {
     it('should complete an active session', async () => {
       const sessionId = createObjectId();
-      const completedSession = {
+      const activeSession = {
         _id: sessionId,
         agentId: createObjectId(),
         participantId: createObjectId(),
         agentOwnerId: mockUserId,
-        status: 'completed' as const,
+        status: 'active' as const,
         currentStep: 'final',
         lastActivityAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+      const completedSession = { ...activeSession, status: 'completed' as const };
 
+      mockSessionRepository.findByIdOrThrow = jest.fn().mockResolvedValue(activeSession);
       mockSessionRepository.updateStatus = jest.fn().mockResolvedValue(completedSession);
 
       const result = await sessionService.completeSession(sessionId.toString());
@@ -188,7 +190,8 @@ describe('SessionService', () => {
 
     it('should throw NotFoundError when session does not exist', async () => {
       const sessionId = createObjectId();
-      mockSessionRepository.updateStatus = jest.fn().mockResolvedValue(null);
+      const error = new NotFoundError('Session', sessionId.toString());
+      mockSessionRepository.findByIdOrThrow = jest.fn().mockRejectedValue(error);
 
       await expect(sessionService.completeSession(sessionId.toString())).rejects.toThrow('Session');
     });
@@ -197,18 +200,20 @@ describe('SessionService', () => {
   describe('abandonSession', () => {
     it('should abandon an active session', async () => {
       const sessionId = createObjectId();
-      const abandonedSession = {
+      const activeSession = {
         _id: sessionId,
         agentId: createObjectId(),
         participantId: createObjectId(),
         agentOwnerId: mockUserId,
-        status: 'abandoned' as const,
+        status: 'active' as const,
         currentStep: 'middle',
         lastActivityAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+      const abandonedSession = { ...activeSession, status: 'abandoned' as const };
 
+      mockSessionRepository.findByIdOrThrow = jest.fn().mockResolvedValue(activeSession);
       mockSessionRepository.updateStatus = jest.fn().mockResolvedValue(abandonedSession);
 
       const result = await sessionService.abandonSession(sessionId.toString());
@@ -768,7 +773,8 @@ describe('SessionService', () => {
   describe('abandonSession edge cases', () => {
     it('should throw NotFoundError when session does not exist', async () => {
       const sessionId = createObjectId();
-      mockSessionRepository.updateStatus = jest.fn().mockResolvedValue(null);
+      const error = new NotFoundError('Session', sessionId.toString());
+      mockSessionRepository.findByIdOrThrow = jest.fn().mockRejectedValue(error);
 
       await expect(sessionService.abandonSession(sessionId.toString())).rejects.toThrow('Session');
     });

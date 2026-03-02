@@ -276,7 +276,9 @@ describe('ParticipantService', () => {
   });
 
   describe('delete', () => {
-    it('should delete participant and associated sessions/conversations', async () => {
+    const agentIds = [createObjectId(), createObjectId()];
+
+    it('should delete scoped sessions and participant when no sessions remain', async () => {
       const participantId = createObjectId();
       const sessionIds = [createObjectId(), createObjectId()];
 
@@ -285,18 +287,23 @@ describe('ParticipantService', () => {
         email: 'test@example.com',
       });
       mockParticipantRepository.getSessionIds = jest.fn().mockResolvedValue(sessionIds);
+      mockParticipantRepository.countSessions = jest.fn().mockResolvedValue(0);
       mockConversationRepository.deleteMany = jest.fn().mockResolvedValue(2);
-      mockSessionRepository.deleteMany = jest.fn().mockResolvedValue(5);
+      mockSessionRepository.deleteMany = jest.fn().mockResolvedValue(2);
       mockParticipantRepository.deleteByIdOrThrow = jest.fn().mockResolvedValue(undefined);
 
-      const result = await participantService.delete(participantId.toString());
+      const result = await participantService.delete(participantId.toString(), agentIds);
 
-      expect(result).toEqual({ sessionsDeleted: 5 });
+      expect(result).toEqual({ sessionsDeleted: 2, participantDeleted: true });
+      expect(mockParticipantRepository.getSessionIds).toHaveBeenCalledWith(
+        participantId,
+        agentIds
+      );
       expect(mockConversationRepository.deleteMany).toHaveBeenCalledWith({
         sessionId: { $in: sessionIds },
       });
       expect(mockSessionRepository.deleteMany).toHaveBeenCalledWith({
-        participantId,
+        _id: { $in: sessionIds },
       });
       expect(mockParticipantRepository.deleteByIdOrThrow).toHaveBeenCalledWith(
         participantId,
@@ -304,12 +311,51 @@ describe('ParticipantService', () => {
       );
     });
 
+    it('should keep participant when sessions remain with other tenants', async () => {
+      const participantId = createObjectId();
+      const sessionIds = [createObjectId()];
+
+      mockParticipantRepository.findByIdOrThrow = jest.fn().mockResolvedValue({
+        _id: participantId,
+        email: 'test@example.com',
+      });
+      mockParticipantRepository.getSessionIds = jest.fn().mockResolvedValue(sessionIds);
+      mockParticipantRepository.countSessions = jest.fn().mockResolvedValue(3);
+      mockConversationRepository.deleteMany = jest.fn().mockResolvedValue(1);
+      mockSessionRepository.deleteMany = jest.fn().mockResolvedValue(1);
+
+      const result = await participantService.delete(participantId.toString(), agentIds);
+
+      expect(result).toEqual({ sessionsDeleted: 1, participantDeleted: false });
+      expect(mockParticipantRepository.deleteByIdOrThrow).not.toHaveBeenCalled();
+    });
+
+    it('should handle participant with no sessions for this tenant', async () => {
+      const participantId = createObjectId();
+
+      mockParticipantRepository.findByIdOrThrow = jest.fn().mockResolvedValue({
+        _id: participantId,
+        email: 'test@example.com',
+      });
+      mockParticipantRepository.getSessionIds = jest.fn().mockResolvedValue([]);
+      mockParticipantRepository.countSessions = jest.fn().mockResolvedValue(2);
+      mockSessionRepository.deleteMany = jest.fn().mockResolvedValue(0);
+
+      const result = await participantService.delete(participantId.toString(), agentIds);
+
+      expect(result).toEqual({ sessionsDeleted: 0, participantDeleted: false });
+      expect(mockConversationRepository.deleteMany).not.toHaveBeenCalled();
+      expect(mockSessionRepository.deleteMany).toHaveBeenCalledWith({ _id: { $in: [] } });
+    });
+
     it('should throw NotFoundError when deleting non-existent participant', async () => {
       const participantId = createObjectId();
       const error = new NotFoundError('Participant', participantId.toString());
       mockParticipantRepository.findByIdOrThrow = jest.fn().mockRejectedValue(error);
 
-      await expect(participantService.delete(participantId.toString())).rejects.toThrow(error);
+      await expect(
+        participantService.delete(participantId.toString(), agentIds)
+      ).rejects.toThrow(error);
     });
   });
 });

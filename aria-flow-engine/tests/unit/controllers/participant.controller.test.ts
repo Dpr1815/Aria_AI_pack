@@ -221,25 +221,43 @@ describe('ParticipantController', () => {
   });
 
   describe('delete', () => {
-    it('should delete participant and associated sessions successfully', async () => {
+    it('should delete participant when no sessions remain', async () => {
       const participantId = createObjectId().toString();
-      const mockResult = { sessionsDeleted: 5 };
+      const mockResult = { sessionsDeleted: 5, participantDeleted: true };
 
       mockService.delete.mockResolvedValue(mockResult);
       mockReq.params = { id: participantId };
 
       await controller.delete(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockService.delete).toHaveBeenCalledWith(participantId);
+      expect(mockService.delete).toHaveBeenCalledWith(participantId, [mockAgentId]);
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
-          data: { sessionsDeleted: 5 },
+          data: { sessionsDeleted: 5, participantDeleted: true },
           message: 'Participant and associated sessions deleted successfully',
         })
       );
       expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it('should unlink participant when sessions remain with other tenants', async () => {
+      const participantId = createObjectId().toString();
+      const mockResult = { sessionsDeleted: 2, participantDeleted: false };
+
+      mockService.delete.mockResolvedValue(mockResult);
+      mockReq.params = { id: participantId };
+
+      await controller.delete(mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: { sessionsDeleted: 2, participantDeleted: false },
+          message: 'Participant sessions removed from your agents',
+        })
+      );
     });
 
     it('should handle errors during deletion', async () => {

@@ -217,6 +217,28 @@ describe('UserService', () => {
       await expect(userService.refresh(refreshToken)).rejects.toThrow('Invalid refresh token');
       expect(mockUserRepository.removeAllRefreshTokens).toHaveBeenCalledWith(userId);
     });
+
+    it('should throw UnauthorizedError if stored token is expired', async () => {
+      const refreshToken = 'expired-stored-token';
+      const tokenHash = 'expired-hash';
+      const userId = new ObjectId();
+      const expiredTokenEntry = createMockRefreshTokenEntry({
+        tokenHash,
+        expiresAt: new Date(Date.now() - 1000), // expired 1 second ago
+      });
+      const mockUser = createMockUserDocument({
+        _id: userId,
+        refreshTokens: [expiredTokenEntry],
+      });
+
+      mockJwt.verify.mockReturnValue({ userId: userId.toString(), type: 'refresh' } as any);
+      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.removeRefreshToken.mockResolvedValue(mockUser);
+      jest.spyOn(userService as any, 'hashToken').mockReturnValue(tokenHash);
+
+      await expect(userService.refresh(refreshToken)).rejects.toThrow('Refresh token expired');
+      expect(mockUserRepository.removeRefreshToken).toHaveBeenCalledWith(userId, tokenHash);
+    });
   });
 
   describe('changePassword', () => {
@@ -293,6 +315,28 @@ describe('UserService', () => {
     });
   });
 
+  describe('logoutAllSessions', () => {
+    it('should remove all refresh tokens for user', async () => {
+      const userId = new ObjectId();
+
+      mockUserRepository.removeAllRefreshTokens.mockResolvedValue(null);
+
+      await userService.logoutAllSessions(userId);
+
+      expect(mockUserRepository.removeAllRefreshTokens).toHaveBeenCalledWith(userId);
+    });
+
+    it('should accept string userId', async () => {
+      const userId = new ObjectId();
+
+      mockUserRepository.removeAllRefreshTokens.mockResolvedValue(null);
+
+      await userService.logoutAllSessions(userId.toString());
+
+      expect(mockUserRepository.removeAllRefreshTokens).toHaveBeenCalled();
+    });
+  });
+
   describe('getUserById', () => {
     it('should return user DTO when user exists', async () => {
       const userId = new ObjectId();
@@ -329,6 +373,59 @@ describe('UserService', () => {
 
       expect(mockUserRepository.updateByIdOrThrow).toHaveBeenCalledWith(userId, input, 'User');
       expect(result.name).toBe('Updated Name');
+    });
+  });
+
+  describe('enforceMaxTokens (via signup)', () => {
+    it('should remove oldest token when user has 10+ refresh tokens', async () => {
+      const input = createMockSignupInput();
+      const userId = new ObjectId();
+
+      // Create 10 tokens with staggered creation times
+      const tokens = Array.from({ length: 10 }, (_, i) =>
+        createMockRefreshTokenEntry({
+          tokenHash: `hash-${i}`,
+          createdAt: new Date(Date.now() - (10 - i) * 60000), // oldest first
+        })
+      );
+
+      const mockUser = createMockUserDocument({ _id: userId, refreshTokens: tokens });
+
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+      mockBcrypt.hash.mockResolvedValue('hashed' as never);
+      mockUserRepository.create.mockResolvedValue(mockUser);
+      // findById is called by enforceMaxTokens
+      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.removeRefreshToken.mockResolvedValue(mockUser);
+      mockUserRepository.addRefreshToken.mockResolvedValue(mockUser);
+      mockJwt.sign.mockReturnValue('token' as any);
+
+      await userService.signup(input);
+
+      // Should remove the oldest token (hash-0)
+      expect(mockUserRepository.removeRefreshToken).toHaveBeenCalledWith(userId, 'hash-0');
+    });
+
+    it('should not remove tokens when user has fewer than 10', async () => {
+      const input = createMockSignupInput();
+      const userId = new ObjectId();
+
+      const tokens = Array.from({ length: 5 }, (_, i) =>
+        createMockRefreshTokenEntry({ tokenHash: `hash-${i}` })
+      );
+
+      const mockUser = createMockUserDocument({ _id: userId, refreshTokens: tokens });
+
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+      mockBcrypt.hash.mockResolvedValue('hashed' as never);
+      mockUserRepository.create.mockResolvedValue(mockUser);
+      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.addRefreshToken.mockResolvedValue(mockUser);
+      mockJwt.sign.mockReturnValue('token' as any);
+
+      await userService.signup(input);
+
+      expect(mockUserRepository.removeRefreshToken).not.toHaveBeenCalled();
     });
   });
 

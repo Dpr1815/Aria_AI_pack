@@ -138,7 +138,7 @@ describe('AgentService', () => {
   beforeEach(() => {
     // Re-setup @modules mocks (resetMocks: true in jest config clears implementations)
     const modules = require('@modules');
-    (modules.validateStepInputs as jest.Mock).mockImplementation(() => {});
+    (modules.validateStepInputs as jest.Mock).mockReturnValue({ success: true });
     (modules.buildStepSkeleton as jest.Mock).mockReturnValue({});
     (modules.getSystemPromptId as jest.Mock).mockReturnValue('template-id');
     (modules.getStepDefinition as jest.Mock).mockReturnValue(null);
@@ -209,7 +209,7 @@ describe('AgentService', () => {
         expect.objectContaining({
           label: 'New Agent',
           ownerId: mockUserId,
-          status: AgentStatus.ACTIVE,
+          status: AgentStatus.INACTIVE,
         })
       );
       expect(mockAgentRepo.create).toHaveBeenCalledWith(

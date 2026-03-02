@@ -118,12 +118,17 @@ describe('StepSequencer', () => {
 
   describe('expandSteps', () => {
     it('should return steps as-is when no definitions have expandsTo', () => {
+      mockIsFirstPositionStep.mockImplementation((id) => id === 'intro');
+      mockIsLastPositionStep.mockImplementation((id) => id === 'conclusion');
+
       const result = sequencer.expandSteps(['intro', 'background', 'conclusion']);
 
       expect(result).toEqual(['intro', 'background', 'conclusion']);
     });
 
     it('should expand steps with expandsTo sub-steps', () => {
+      mockIsFirstPositionStep.mockImplementation((id) => id === 'intro');
+      mockIsLastPositionStep.mockImplementation((id) => id === 'conclusion');
       mockGetStepDefinition.mockImplementation((id) => {
         if (id === 'work') {
           return { expandsTo: ['work_scenario', 'work_roleplay'] } as any;
@@ -136,13 +141,25 @@ describe('StepSequencer', () => {
       expect(result).toEqual(['intro', 'work_scenario', 'work_roleplay', 'conclusion']);
     });
 
-    it('should maintain intro first and conclusion last', () => {
+    it('should place first-position steps first and last-position steps last', () => {
+      mockIsFirstPositionStep.mockImplementation((id) => id === 'intro');
+      mockIsLastPositionStep.mockImplementation((id) => id === 'conclusion');
       mockGetStepDefinition.mockReturnValue(null as any);
 
       const result = sequencer.expandSteps(['conclusion', 'background', 'intro']);
 
       expect(result[0]).toBe('intro');
       expect(result[result.length - 1]).toBe('conclusion');
+    });
+
+    it('should order by position property, not hardcoded IDs', () => {
+      mockIsFirstPositionStep.mockImplementation((id) => id === 'custom_first');
+      mockIsLastPositionStep.mockImplementation((id) => id === 'custom_last');
+      mockGetStepDefinition.mockReturnValue(null as any);
+
+      const result = sequencer.expandSteps(['custom_last', 'middle', 'custom_first']);
+
+      expect(result).toEqual(['custom_first', 'middle', 'custom_last']);
     });
 
     it('should deduplicate expanded steps', () => {

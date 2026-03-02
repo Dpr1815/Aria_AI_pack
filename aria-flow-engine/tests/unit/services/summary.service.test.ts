@@ -486,6 +486,7 @@ describe('SummaryService', () => {
             injectTimeAnalysis: true,
           },
         },
+        outputSchema: { parse: (v: any) => v },
       });
 
       // Mock step definition for resolveStepKeys
