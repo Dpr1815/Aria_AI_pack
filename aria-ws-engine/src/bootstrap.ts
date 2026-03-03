@@ -241,6 +241,7 @@ function createController(
     config: {
       pingIntervalMs: serverConfig.websocket.pingIntervalMs,
       pongTimeoutMs: serverConfig.websocket.pongTimeoutMs,
+      trustedProxyIpHeader: serverConfig.trustedProxyIpHeader || undefined,
     },
   });
 }

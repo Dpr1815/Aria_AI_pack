@@ -86,7 +86,8 @@ export type WsClientMessageType =
   | "audio"
   | "stopRecording"
   | "submitData"
-  | "action";
+  | "action"
+  | "ping";
 
 export interface WsAction {
   type: string;
@@ -99,7 +100,8 @@ export type WsOutboundMessage =
   | { type: "audio"; data: string }
   | { type: "stopRecording"; latency?: number }
   | { type: "submitData"; dataType: string; payload: unknown; latency?: number }
-  | { type: "action"; action: WsAction };
+  | { type: "action"; action: WsAction }
+  | { type: "ping" };
 
 /* ── WebSocket — Server → Client ── */
 
@@ -164,7 +166,8 @@ export type WsInboundMessage =
   | { type: "conversationComplete" }
   | { type: "processingStart"; stage: "stt" | "llm" | "tts" | "lipsync" }
   | { type: "processingEnd"; stage: "stt" | "llm" | "tts" | "lipsync" }
-  | { type: "error"; error: string; code?: string; recoverable?: boolean };
+  | { type: "error"; error: string; code?: string; recoverable?: boolean }
+  | { type: "pong" };
 
 /* ── Video Recorder ── */
 

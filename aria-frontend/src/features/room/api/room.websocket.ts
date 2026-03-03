@@ -26,6 +26,8 @@ export type WsStatusHandler = (
 const RECONNECT_BASE_DELAY_MS = 1_000;
 const RECONNECT_MAX_DELAY_MS = 30_000;
 const RECONNECT_MAX_ATTEMPTS = 10;
+const PING_INTERVAL_MS = 30_000;
+const PONG_TIMEOUT_MS = 5_000;
 
 export class RoomWebSocket {
   private ws: WebSocket | null = null;
@@ -35,6 +37,8 @@ export class RoomWebSocket {
   private intentionalClose = false;
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private pingInterval: ReturnType<typeof setInterval> | null = null;
+  private pongTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(onMessage: WsMessageHandler, onStatus: WsStatusHandler) {
     this.onMessage = onMessage;
@@ -53,11 +57,16 @@ export class RoomWebSocket {
     this.ws.onopen = () => {
       this.reconnectAttempt = 0;
       this.onStatus("connected");
+      this.startHeartbeat();
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data as string) as WsInboundMessage;
+        if (data.type === "pong") {
+          this.clearPongTimeout();
+          return;
+        }
         this.onMessage(data);
       } catch (err) {
         console.error("[RoomWS] Failed to parse message:", err);
@@ -69,6 +78,7 @@ export class RoomWebSocket {
     };
 
     this.ws.onclose = () => {
+      this.stopHeartbeat();
       if (this.intentionalClose) {
         this.onStatus("disconnected");
         return;
@@ -115,9 +125,37 @@ export class RoomWebSocket {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    this.pingInterval = setInterval(() => {
+      if (this.ws?.readyState !== WebSocket.OPEN) return;
+      this.send({ type: "ping" });
+      this.pongTimeout = setTimeout(() => {
+        console.warn("[RoomWS] Pong timeout — closing dead connection");
+        this.ws?.close();
+      }, PONG_TIMEOUT_MS);
+    }, PING_INTERVAL_MS);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+    this.clearPongTimeout();
+  }
+
+  private clearPongTimeout(): void {
+    if (this.pongTimeout) {
+      clearTimeout(this.pongTimeout);
+      this.pongTimeout = null;
+    }
+  }
+
   /** Close the connection (no auto-reconnect) */
   disconnect(): void {
     this.intentionalClose = true;
+    this.stopHeartbeat();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;

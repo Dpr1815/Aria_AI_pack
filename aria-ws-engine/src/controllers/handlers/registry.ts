@@ -16,6 +16,7 @@ import { execute as startRecording } from './startRecording.handler';
 import { execute as audio } from './audio.handler';
 import { execute as stopRecording } from './stopRecording.handler';
 import { execute as submitData } from './submitData.handler';
+import { execute as ping } from './ping.handler';
 
 export const handlerRegistry: HandlerRegistry = {
   init: {
@@ -37,6 +38,10 @@ export const handlerRegistry: HandlerRegistry = {
   submitData: {
     execute: submitData,
     requiresAuth: true,
+  },
+  ping: {
+    execute: ping,
+    requiresAuth: false,
   },
 };
 

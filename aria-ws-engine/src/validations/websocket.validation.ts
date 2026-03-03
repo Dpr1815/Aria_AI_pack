@@ -59,6 +59,14 @@ export const SubmitDataMessageSchema = z.object({
   latency: z.number().nonnegative().optional(),
 });
 
+/**
+ * Ping Message
+ * Application-level heartbeat from client.
+ */
+export const PingMessageSchema = z.object({
+  type: z.literal('ping'),
+});
+
 // ============================================
 // Discriminated Union for All Client Messages
 // ============================================
@@ -69,6 +77,7 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
   AudioMessageSchema,
   StopRecordingMessageSchema,
   SubmitDataMessageSchema,
+  PingMessageSchema,
 ]);
 
 // ============================================
@@ -80,6 +89,7 @@ export type StartRecordingMessage = z.infer<typeof StartRecordingMessageSchema>;
 export type AudioMessage = z.infer<typeof AudioMessageSchema>;
 export type StopRecordingMessage = z.infer<typeof StopRecordingMessageSchema>;
 export type SubmitDataMessage = z.infer<typeof SubmitDataMessageSchema>;
+export type PingMessage = z.infer<typeof PingMessageSchema>;
 export type ClientMessage = z.infer<typeof ClientMessageSchema>;
 export type ClientMessageType = ClientMessage['type'];
 

@@ -34,6 +34,8 @@ const byUser = (req: Request): string => req.user?._id?.toString() || byIP(req);
 // In-memory rate limiter (sliding window — fallback)
 // ============================================
 
+const MAX_STORE_ENTRIES = 10_000;
+
 function createInMemoryRateLimiter(name: string, config: RateLimitConfig): RequestHandler {
   const store = new Map<string, RateLimitEntry>();
 
@@ -52,6 +54,11 @@ function createInMemoryRateLimiter(name: string, config: RateLimitConfig): Reque
 
     let entry = store.get(key);
     if (!entry) {
+      // Evict oldest entry (by insertion order) when store is at capacity
+      if (store.size >= MAX_STORE_ENTRIES) {
+        const oldestKey = store.keys().next().value!;
+        store.delete(oldestKey);
+      }
       entry = { timestamps: [] };
       store.set(key, entry);
     }

@@ -312,9 +312,12 @@ export class WebSocketController {
   }
 
   private extractIP(req: IncomingMessage): string {
-    const forwarded = req.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
-      return forwarded.split(',')[0].trim();
+    const header = this.config.trustedProxyIpHeader;
+    if (header) {
+      const value = req.headers[header];
+      if (typeof value === 'string') {
+        return value.split(',')[0].trim();
+      }
     }
     return req.socket.remoteAddress || 'unknown';
   }
@@ -337,11 +340,20 @@ export class WebSocketController {
         new Promise<void>((resolve) => {
           ws.close(1001, reason);
           ws.once('close', () => resolve());
-          setTimeout(resolve, 5000);
+          setTimeout(() => {
+            ws.terminate();
+            resolve();
+          }, 5000);
         })
     );
 
     await Promise.all(promises);
+
+    // Run cleanup for connections that timed out — their 'close' event
+    // handler didn't fire, so handleDisconnect was never called.
+    for (const [, state] of this.connections) {
+      await this.handleDisconnect(state);
+    }
     this.connections.clear();
   }
 }

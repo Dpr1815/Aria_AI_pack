@@ -42,6 +42,7 @@ export type {
   AudioMessage,
   StopRecordingMessage,
   SubmitDataMessage,
+  PingMessage,
   ClientMessage,
   ClientMessageType,
 } from '../validations/websocket.validation';
@@ -60,7 +61,8 @@ export type ServerMessageType =
   | 'stepChanged'
   | 'conversationComplete'
   | 'processingStart'
-  | 'processingEnd';
+  | 'processingEnd'
+  | 'pong';
 
 export interface BaseServerMessage {
   type: ServerMessageType;
@@ -142,6 +144,10 @@ export interface ProcessingEndMessage extends BaseServerMessage {
   stage: 'stt' | 'llm' | 'tts' | 'lipsync';
 }
 
+export interface PongMessage extends BaseServerMessage {
+  type: 'pong';
+}
+
 export type ServerMessage =
   | ResponseMessage
   | AudioResponseMessage
@@ -152,7 +158,8 @@ export type ServerMessage =
   | StepChangedMessage
   | ConversationCompleteMessage
   | ProcessingStartMessage
-  | ProcessingEndMessage;
+  | ProcessingEndMessage
+  | PongMessage;
 
 // ============================================
 // Handler Context
@@ -220,6 +227,7 @@ export interface WebSocketControllerConfig {
   pingIntervalMs: number;
   pongTimeoutMs: number;
   maxMessageSize?: number;
+  trustedProxyIpHeader?: string;
 }
 
 export interface SendMessageOptions {

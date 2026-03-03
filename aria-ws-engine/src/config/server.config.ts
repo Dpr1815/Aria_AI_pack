@@ -22,6 +22,7 @@ const {
   CORS_ORIGIN = '*',
   API_SERVER_URL = 'http://localhost:8080',
   SERVICE_TOKEN = '',
+  TRUSTED_PROXY_IP_HEADER = '',
 } = process.env;
 
 // ============================================
@@ -33,6 +34,7 @@ export interface ServerConfig {
   host: string;
   nodeEnv: 'development' | 'production' | 'test';
   jwtSecret: string;
+  trustedProxyIpHeader: string;
   cors: CorsConfig;
   websocket: WebSocketConfig;
   api: ApiConfig;
@@ -65,6 +67,7 @@ export const serverConfig: ServerConfig = {
   host: HOST,
   nodeEnv: NODE_ENV as 'development' | 'production' | 'test',
   jwtSecret: SESSION_JWT_SECRET,
+  trustedProxyIpHeader: TRUSTED_PROXY_IP_HEADER.toLowerCase(),
   cors: {
     origin: CORS_ORIGIN.includes(',') ? CORS_ORIGIN.split(',').map((s) => s.trim()) : CORS_ORIGIN,
     credentials: true,
